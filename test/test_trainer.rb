@@ -4,7 +4,12 @@ require 'test/unit'
 class TestTrainer < Test::Unit::TestCase
   def setup
     @sources_dir = File.join(File.dirname(__FILE__), 'fixtures', 'sources')
-    @t = Trainer.new(@sources_dir)
+    @output_dir = File.join(File.dirname(__FILE__), 'fixtures', 'output')
+    @t = Trainer.new(@sources_dir,@output_dir)
+  end
+
+  def teardown
+    FileUtils.rm_r @output_dir
   end
   
   def test_available_languages
@@ -18,8 +23,8 @@ class TestTrainer < Test::Unit::TestCase
   end
 
   def test_train
-    assert(@t.classifier.categories.include?("Ruby"))
-    assert(@t.classifier.categories.include?("Gcc"))
+    assert(@t.classifier.system.categories.include?("Ruby"))
+    assert(@t.classifier.system.categories.include?("Gcc"))
   end
 
 end
