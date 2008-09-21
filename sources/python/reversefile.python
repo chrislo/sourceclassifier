@@ -1,0 +1,13 @@
+#!/usr/bin/python
+# $Id: reversefile.python,v 1.1.1.1 2004-05-19 18:12:18 bfulgham Exp $
+# http://www.bagley.org/~doug/shootout/
+# from Brad Knotwell
+# with help from Mark Baker
+
+def main():
+    from sys import stdin, stdout
+    w = stdin.readlines()
+    w.reverse()
+    stdout.writelines(w)
+
+main()

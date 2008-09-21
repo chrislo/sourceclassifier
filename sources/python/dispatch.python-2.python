@@ -1,0 +1,136 @@
+#!/usr/bin/python -OO
+# The Computer Language Shootout Benchmarks
+# http://shootout.alioth.debian.org/
+#
+# contributed by Antoine Pitrou
+
+import sys
+
+class BottleState(object):
+    pass
+
+class EmptyState(BottleState):
+    tag = 1
+
+    def do_next(self, target):
+        target.state = Full
+
+class FullState(BottleState):
+    tag = 2
+
+    def do_next(self, target):
+        target.state = Sealed
+
+class SealedState(BottleState):
+    tag = 3
+
+    def do_next(self, target):
+        target.state = Empty
+
+Empty = EmptyState()
+Full = FullState()
+Sealed = SealedState()
+BottleState.initial_state = Empty
+
+class PressurizedBottleState(BottleState):
+    pass
+
+class UnpressurizedEmptyState(PressurizedBottleState):
+    tag = 4
+
+    def do_next(self, target):
+        target.state = UnpressurizedFull
+
+class UnpressurizedFullState(PressurizedBottleState):
+    tag = 5
+
+    def do_next(self, target):
+        target.state = PressurizedUnsealed
+
+class PressurizedUnsealedState(PressurizedBottleState):
+    tag = 6
+
+    def do_next(self, target):
+        target.state = Sealed
+
+class PressurizedSealedState(PressurizedBottleState):
+    tag = 7
+
+    def do_next(self, target):
+        target.state = UnpressurizedEmpty
+
+UnpressurizedEmpty = UnpressurizedEmptyState()
+UnpressurizedFull = UnpressurizedFullState()
+PressurizedUnsealed = PressurizedUnsealedState()
+PressurizedSealed = PressurizedSealedState()
+PressurizedBottleState.initial_state = UnpressurizedEmpty
+
+
+class Bottle(object):
+    state_type = BottleState
+
+    def __init__(self, id_):
+        self.id_ = id_
+        self.state = self.state_type.initial_state
+
+    def fill(self):
+        self.state.do_next(self)
+
+    def seal(self):
+        self.state.do_next(self)
+
+    def empty(self):
+        self.state.do_next(self)
+        
+    def cycle(self):
+        self.fill()
+        self.seal()
+        self.empty()
+
+    def check(self, c):
+        return c + self.id_ + self.state.tag
+
+
+class PressurizedBottle(Bottle):
+    state_type = PressurizedBottleState
+
+    def __init__(self, *args, **kargs):
+        Bottle.__init__(self, *args, **kargs)
+
+    def pressurize(self):
+        self.state.do_next(self)
+
+    def cycle(self):
+        self.fill()
+        self.pressurize()
+        self.seal()
+        self.empty()
+
+
+def bottle_check(a1, a2, a3, a4, a5, i):
+    a1.cycle()
+    a2.cycle()
+    a3.cycle()
+    a4.cycle()
+    a5.cycle()
+    c = i % 2
+    return a1.check(c) + a2.check(c) + a3.check(c) + a4.check(c) + a5.check(c)
+
+def main():
+    n = int(sys.argv[1])
+    b0, b1, b2, b3, b4, b5, b6, b7, b8, b9 = [
+        Bottle(i) for i in range(10)]
+    p0, p1, p2, p3, p4, p5, p6, p7, p8, p9 = [
+        PressurizedBottle(i) for i in range(10)]
+
+    check = 0
+    for i in xrange(1, n+1):
+        check += bottle_check(b1, b2, b3, b4, b5, i)
+        check += bottle_check(b6, b7, b8, b9, b0, i)
+        check += bottle_check(p1, p2, p3, p4, p5, i)
+        check -= bottle_check(p6, p7, p8, p9, p0, i)
+
+    print "%d" % check
+
+main()
+

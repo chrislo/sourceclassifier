@@ -1,0 +1,51 @@
+#!/usr/bin/python
+# $Id: prodcons.python,v 1.1.1.1 2004-05-19 18:11:10 bfulgham Exp $
+# http://www.bagley.org/~doug/shootout/
+
+import sys
+from threading import * 
+
+access = Condition()
+count = 0
+consumed = 0
+produced = 0
+data = 0
+
+def consumer(n):
+    global count, data, consumed
+    while 1:
+        access.acquire()
+        while count == 0:
+            access.wait()
+        i = data
+        count = 0
+        access.notify()
+        access.release()
+        consumed += 1
+        if i == n:
+            break
+
+def producer(n):
+    global count, data, produced
+    for i in xrange(1,n+1):
+        access.acquire()
+        while count == 1:
+            access.wait()
+        data = i
+        count = 1
+        access.notify()
+        access.release()
+        produced += 1
+
+def main(n):
+    t1 = Thread(target=producer, args=(n,))
+    t2 = Thread(target=consumer, args=(n,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    print produced, consumed
+    
+main(int(sys.argv[1]))
+
+

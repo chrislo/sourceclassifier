@@ -1,0 +1,98 @@
+/* The Computer Language Shootout
+ * http://shootout.alioth.debian.org/
+ *
+ * contributed by CTips (ctips@bestweb.net)
+ * modified by 
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <limits.h>
+
+#define MAXLINELEN	128
+
+/* the progam sums each digit position separately; the formula below gives
+ * a coservative estimate of the number of digits required
+ */
+#define MAXDIGITS 	((int)(1+((sizeof(int)*CHAR_BIT)/3)))
+
+/* stdin is may be unbuffered by default in the operating system. 
+ * Provide a buffer as shown below to make sure that it is buffered
+ */
+#ifndef IOBUFSIZE
+#define IOBUFSIZE	(16*1024)
+#endif
+
+/* according to the benchmark requiremnents, we need to use "line-oriented"
+ * I/O functions. I'm going to assume that requires line-buffering as well,
+ * but we can override the behavior here
+ */
+#define IOBUFMODE	_IOLBF
+
+/* gets or fgets */
+#ifndef USE_GETS
+#define USE_GETS	1
+#endif
+
+#if USE_GETS
+#define IOGET(_line)	gets(_line)
+#else
+#define IOGET(_line)	fgets(_line, sizeof(_line), stdin)
+#endif
+
+int
+main(void)
+{
+  char		line[MAXLINELEN];
+  int		digitsum[MAXDIGITS];
+  char		iobuf[IOBUFSIZE];
+  int 		sum;
+  int		i;
+
+  setvbuf(stdin, iobuf, IOBUFMODE, sizeof(iobuf));
+
+  for( i = 0; i < MAXDIGITS; i++ ) {
+    digitsum[i] = 0;
+  }
+
+  while( IOGET(line) ) {
+    char *	p = line;
+    char	digits[15];
+    int		ndigits;
+    int		isneg;
+
+    while( isspace(*p) ) {
+      p++;
+    }
+
+    isneg = 0;
+    if( *p == '-' ) {
+      p++;
+      isneg = 1;
+    }
+
+    ndigits = 0;
+    while( isdigit(*p) ) {
+      digits[ndigits] = *p;
+      ndigits++;
+      p++;
+    }
+    if( isneg ) {
+      for( i = 0; i < ndigits; i++ ) {
+	digitsum[i] -= digits[ndigits-1-i] - '0';
+      }
+    }
+    else {
+      for( i = 0; i < ndigits; i++ ) {
+	digitsum[i] += digits[ndigits-1-i] - '0';
+      }
+    }
+  }
+
+  sum = 0;
+  for( i = MAXDIGITS-1; i >= 0; i-- ) {
+    sum = sum*10 + digitsum[i];
+  }
+  printf("%d\n", sum);
+  return(0);
+}

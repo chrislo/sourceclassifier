@@ -1,0 +1,40 @@
+/* -*- mode: c -*-
+ * $Id: wc.gcc-2.gcc,v 1.1 2004-11-10 06:42:03 bfulgham Exp $
+ * http://www.bagley.org/~doug/shootout/
+ *
+ * this program is modified from:
+ *   http://cm.bell-labs.com/cm/cs/who/bwk/interps/pap.html
+ * Timing Trials, or, the Trials of Timing: Experiments with Scripting
+ * and User-Interface Languages</a> by Brian W. Kernighan and
+ * Christopher J. Van Wyk.
+ *
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+
+enum {
+    OUT,			/* outside a word */
+    IN				/* inside a word */
+};
+
+int
+main() {
+    int c, nl, nw, nc, state;
+
+    state = OUT;
+    nl = nw = nc = 0;
+    while ((c = getchar()) != EOF) {
+	++nc;
+	if (c == '\n')
+	    ++nl;
+	if (c == ' ' || c == '\n' || c == '\t')
+	    state = OUT;
+	else if (state == OUT) {
+	    state = IN;
+	    ++nw;
+	}
+    }
+    printf("%d %d %d\n", nl, nw, nc);
+    return(0);
+}

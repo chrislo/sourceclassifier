@@ -1,0 +1,176 @@
+#!/usr/bin/python -OO
+# The Computer Language Shootout Benchmarks
+# http://shootout.alioth.debian.org/
+#
+# contributed by Kevin Carson
+import sys
+
+
+class IBottleState :
+    Empty = None
+    Full = None
+    Sealed = None
+
+
+class BottleState(IBottleState) :
+    def __init__(self) :
+        self.Empty = BottleState.EmptyState()
+        self.Full = BottleState.FullState()
+        self.Sealed = BottleState.SealedState()
+
+    def initialState(self) :
+        return self.Empty
+
+    class EmptyState :
+        def next(self) :
+            return IBottleState.Full
+
+        def tag(self) :
+            return 1
+
+    class FullState :
+        def next(self) :
+            return IBottleState.Sealed
+
+        def tag(self) :
+            return 2
+
+    class SealedState :
+        def next(self) :
+            return IBottleState.Empty
+
+        def tag(self) :
+            return 3
+
+
+class PressurizedBottleState(BottleState) :
+    def __init__(self, tag) :
+        BottleState.__init__(self)
+        self.UnpressurizedEmpty = UnpressurizedEmptyState()
+        self.UnpressurizedFull = UnpressurizedFullState()
+        self.PressurizedSealed = PressurizedSealedState()
+
+    def initialState(self) :
+        return self.UnpressurizedEmpty
+
+    class UnpressurizedEmptyState :
+        def next(self) :
+            return self.UnpressurizedFull
+
+        def tag(self) :
+            return 4
+
+    class UnpressurizedFullState :
+        def next(self) :
+            return self.PressurizedUnsealed
+
+        def tag(self) :
+            return 5
+
+    class PressurizedUnsealedState :
+        def next(self) :
+            return self.Sealed
+
+        def tag(self) :
+            return 6
+
+    class PressurizedSealedState :
+        def next(self) :
+            return self.UnpressurizedEmpty
+
+        def tag(self) :
+            return 7
+
+
+class Bottle :
+    def __init__(self, Id) :
+        self.Id = Id
+        self.state = BottleState()
+        self.state = self.state.initialState()
+
+    def state(self, state) :
+        self.state = state
+
+    def cycle(self) :
+        self.fill(), self.seal(), self.empty()
+
+    def initialState(self) :
+        return self.initialState()
+
+    def empty(self) :
+        self.state.next()
+
+    def fill(self) :
+        self.state.next()
+
+    def seal(self) :
+        self.state.next()
+
+    def check(self, c) :
+        return self.state.tag() + self.Id + c
+
+
+class PressurizedBottle(PressurizedBottleState, Bottle) :
+    def __init__(self, Id) :
+        Bottle.__init__(self, Id)
+
+    def initialState(self) :
+        return PressurizedBottleState.initialState()
+
+    def pressurize(self) :
+        self.state.next()
+
+    def cycle(self) :
+        self.fill(), self.pressurize(), self.seal(), self.empty()
+
+
+def bottleCheck(a1, a2, a3, a4, a5, i) :
+    a1.cycle()
+    a2.cycle()
+    a3.cycle()
+    a4.cycle()
+    a5.cycle()
+
+    r = i % 2
+
+    return a1.check(r) + a2.check(r) + a3.check(r) + a4.check(r) + a5.check(r)
+
+
+def main() :
+    n = int(sys.argv[1])
+
+    b1 = Bottle(1)
+    b2 = Bottle(2)
+    b3 = Bottle(3)
+    b4 = Bottle(4)
+    b5 = Bottle(5)
+    b6 = Bottle(6)
+    b7 = Bottle(7)
+    b8 = Bottle(8)
+    b9 = Bottle(9)
+    b0 = Bottle(0)
+
+    p1 = PressurizedBottle(1)
+    p2 = PressurizedBottle(2)
+    p3 = PressurizedBottle(3)
+    p4 = PressurizedBottle(4)
+    p5 = PressurizedBottle(5)
+    p6 = PressurizedBottle(6)
+    p7 = PressurizedBottle(7)
+    p8 = PressurizedBottle(8)
+    p9 = PressurizedBottle(9)
+    p0 = PressurizedBottle(0)
+
+    check = 0
+
+    for i in xrange(1, n + 1) :
+        check += bottleCheck(b1, b2, b3, b4, b5, i);
+        check += bottleCheck(b6, b7, b8, b9, b0, i);
+
+        check += bottleCheck(p1, p2, p3, p4, p5, i);
+        check -= bottleCheck(p6, p7, p8, p9, p0, i);
+    
+    print check
+
+
+main()

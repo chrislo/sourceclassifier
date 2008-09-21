@@ -1,0 +1,24 @@
+#!/usr/bin/python
+# $Id: nestedloop.python,v 1.1.1.1 2004-05-19 18:10:57 bfulgham Exp $
+# http://www.bagley.org/~doug/shootout/
+# with help from Mark Baker
+
+import sys
+
+def main():
+    x = 0
+    iter = int(sys.argv[1])
+    if iter < 1:
+        iter = 1
+    
+    i_r = range(iter)
+    for a in i_r:
+        for b in i_r:
+            for c in i_r:
+                for d in i_r:
+                    for e in i_r:
+                        for f in i_r:
+                            x += 1
+    print x
+
+main()

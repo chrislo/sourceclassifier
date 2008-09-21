@@ -1,0 +1,103 @@
+/* -*- mode: c -*-
+ * $Id: reversefile.gcc,v 1.5 2004-10-18 07:15:07 bfulgham Exp $
+ * http://shootout.alioth.debian.org/
+ * 
+ * from Alan Post <apost@recalcitrant.org>
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <assert.h>
+#include <limits.h>
+#include <sys/uio.h>
+
+#define MAXREAD 4096
+#define IOV_MAX 1024
+
+typedef struct buf_t { char d[MAXREAD];
+                       size_t len;
+                       struct buf_t *next;} buf_t;
+
+static print_string( char *data, size_t len,
+                     struct iovec *vec, size_t *p_ivec )
+{
+    vec[ *p_ivec ].iov_base = data;
+    vec[ *p_ivec ].iov_len = (int) len;
+    ++ *p_ivec;
+    if ( *p_ivec == IOV_MAX )
+    {
+        writev( STDOUT_FILENO, vec, *p_ivec );
+        *p_ivec = 0;
+    }
+}
+
+static print_line( char *pos, char *end, buf_t **p_loh,
+                   struct iovec *vec, size_t *p_ivec )
+{
+    print_string( pos, end - pos, vec, p_ivec );
+    for (; *p_loh != NULL; *p_loh = (*p_loh)->next )
+        print_string( (*p_loh)->d, (*p_loh)->len, vec, p_ivec );
+}
+
+static void rev_print( buf_t *head )
+{
+    buf_t *loh = NULL;
+    buf_t *curr = head;
+
+    struct iovec vec[ IOV_MAX ];
+    size_t ivec = 0;
+
+    while ( 1 )
+    {
+        char *buf = curr->d;
+        char *end = buf + curr->len;
+        char *pos = end;
+        for (;; pos--)
+        {
+            if ( pos <= buf )
+            {
+                buf_t *new_curr = curr->next;
+
+                if ( new_curr == NULL )
+                {
+                    print_line( pos, end, &loh, vec, &ivec );
+                    writev( STDOUT_FILENO, vec, ivec );
+                    return;
+                }
+
+                curr->len = end - buf;
+                curr->next = loh;
+                loh = curr;
+                
+                curr = new_curr;
+                break;
+            }
+            if ( *(pos-1) == '\n' )
+            {
+                print_line( pos, end, &loh, vec, &ivec );
+                end = pos;
+            }
+        }
+    }
+    assert( NULL == "unreachable" );
+}
+
+static void f( buf_t *tail )
+{
+    buf_t head;
+
+    head.next = tail;
+    head.len = read( STDIN_FILENO, head.d, MAXREAD );
+
+    if ( head.len == MAXREAD ) f( &head );
+    else rev_print( &head );
+}
+
+int main(int argc, char *argv[])
+{
+    f( NULL );
+    return EXIT_SUCCESS;
+}
+

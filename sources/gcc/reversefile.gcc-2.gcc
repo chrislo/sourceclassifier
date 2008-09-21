@@ -1,0 +1,56 @@
+/* -*- mode: c -*-
+ * $Id: reversefile.gcc-2.gcc,v 1.1 2004-11-10 06:51:38 bfulgham Exp $
+ * http://www.bagley.org/~doug/shootout/
+ */
+
+/* this version attempts to read the file line by line instead of
+   all at once. */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#define BLKSIZE 16 * 1024
+
+int main(int argc, char *argv[]) {
+    int nread, size, len;
+    char *cp, *offset, *buf = malloc(BLKSIZE + 1);
+
+    offset = buf;
+    size = len = BLKSIZE;
+    while (1) {
+	nread = read(0, offset, len);
+	if (0 == nread) break;
+	if (-1 == nread) {
+	    perror("read");
+	    exit(1);
+	}
+	offset += nread;
+	len -= nread;
+	if (0 == len) {
+	    len = size;
+	    size *= 2;
+	    if (0 == (cp = realloc(buf, size + 1))) {
+		fprintf(stderr, "realloc failed\n");
+		exit(1);
+	    }
+	    buf = cp;
+	    offset = buf + len;
+	}
+    }
+    *offset = 0;
+    for (cp = offset; cp > buf; --cp) {
+	if ('\n' == *cp) {
+	    *offset = 0;
+	    if (cp < offset)
+		printf(offset = cp+1);
+	}
+    }
+    if (cp < offset) {
+	*offset = 0;
+	printf(cp);
+    }
+    free(buf);
+    return(0);
+}

@@ -1,0 +1,28 @@
+import sys, re, string
+
+def main():
+    count = {}
+    p = re.compile(r'[^a-z]')
+    for word in p.split(string.lower(sys.stdin.read())):
+        if not word: continue
+        count[word] = count.get(word, 0) + 1
+
+    bucket = {}
+    for key, val in count.items():
+        if not bucket.has_key(val):
+            bucket[val] = []
+        bucket[val].append(key)
+
+    freqs = bucket.keys()
+    freqs.sort()
+    freqs.reverse()
+
+    for freq in freqs:
+        words = bucket[freq]
+        words.sort()
+        words.reverse()
+        for word in words:
+            print "%7d\t%s" % (freq, word)
+
+main()
+sys.stdout.flush()

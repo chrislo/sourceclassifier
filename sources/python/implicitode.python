@@ -1,0 +1,231 @@
+#!/usr/bin/env python
+#
+# The Great Computer Language Shootout
+# http://shootout.alioth.debian.org/ 
+#
+# Contributed by Sebastien Loisel
+#
+# OVERVIEW: In this test, we solve an ordinary differential equation
+#    u'=f(t,u)
+# using the Trapezoid numerical method, which can be written as
+#    (u[k+1]-u[k])=(f(t[k],u[k])+f(t[k]+dt,u[k+1]))*dt/2,
+# where t[k], u[k], dt and the function f are known and u[k+1] is the
+# unknown.
+#
+# Since u[k+1] appears on both sides of the equation, we use an iterative
+# solver called the newton iteration to compute u[k+1]. The newton iteration
+# computes the solution to
+#    h(x)=0
+# where h is a known function and x is the unknown 0 of h, using the method
+#    x[k+1]=x[k]-f(x[k])/f'(x[k]).
+# Here, f' denotes the derivative of f.
+#
+# To compute f' from the definition of f alone, we use a technique called
+# automatic differentiation. This works by replacing all floating point
+# variables by a special type we call ad (for automatic differentiation.)
+# If the python program for f is called with parameter x of type ad,
+# it will do the same work as if it were called with the equivalent parameter
+# of type floating point, but will also return f'. That's why it's called
+# "automatic."
+#
+# To shake things up, we also have another type, fl (for "float") which
+# works exactly like a double precision floating point, but with much
+# less precision.
+#
+# Summary of classes:
+#
+# ad -- automatic differentiation type
+# fl -- low precision floating point type
+# mycomplex -- complex numbers whose real and imaginary parts can be fl
+# trapezoid_method_rooter -- implements the function that the trapezoid method
+#                            must solve
+
+import sys
+from math import log,exp,floor,fabs
+
+def sqr(x):
+    """sqr(x): a helper function that computes the square of any "number" x."""
+    return x*x
+
+def pwr(x,k):
+    """pwr(x,k): a helper function that computes the kth power of any
+    "number" x."""
+    if k<=0:
+        return 1
+    elif (k&1):
+        return x*pwr(x,k-1)
+    return sqr(pwr(x,k/2))
+
+def pr(x):
+    """Print a value depending on its type."""
+    if isinstance(x,float):
+        return "%.12e"%x
+    elif isinstance(x,complex):
+        return "%.12e %.12e"%(x.real,x.imag)
+    else:
+        return x.pr()
+
+class fl:
+    """A low-precision floating point class."""
+    def pr(x):
+        return "%.2e"%x.a
+    def __init__(x,a=0):
+        global count
+        if a==0:
+            x.a=0.0
+        else:
+            k=int(log(fabs(a)))
+            x.a=floor(a*exp(-k+6)+0.5)*exp(k-6)
+    def __add__(x,y):
+        return fl(x.a+y.a)
+    def __radd__(y,x):
+        return x+y
+    def __sub__(x,y):
+        return fl(x.a-y.a)
+    def __mul__(x,y):
+        return fl(x.a*y.a)
+    def __rmul__(y,x):
+        return x*y
+    def __div__(x,y):
+        return fl(x.a/y.a)
+    def __coerce__(x,y):
+        if isinstance(y,fl):
+            return (x,y)
+        return (x,fl(y))
+
+class mycomplex:
+    """A complex type so that the type of the real or imaginary part can be
+    any kind of number."""
+    def __init__(x,a=0,b=0):
+        x.real,x.imag=a,b
+    def __add__(a,b):
+        return mycomplex(a.real+b.real,a.imag+b.imag)
+    def __radd__(b,a):
+        return a+b
+    def __sub__(a,b):
+        return mycomplex(a.real-b.real,a.imag-b.imag)
+    def __mul__(a,b):
+        return mycomplex(a.real*b.real-a.imag*b.imag,
+                         a.real*b.imag+a.imag*b.real)
+    def __rmul__(b,a):
+        return a*b
+    def __div__(a,b):
+        mag=b.real*b.real+b.imag*b.imag
+        return mycomplex((a.real*b.real+a.imag*b.imag)/mag,
+                         (a.imag*b.real-a.real*b.imag)/mag)
+    def __coerce__(a,b):
+        if isinstance(b,mycomplex):
+            return (a,b)
+        return (a,mycomplex(b))
+    def pr(a):
+        return pr(a.real)+' '+pr(a.imag)
+
+def one(x):
+    if isinstance(x,float):
+        return 1.0
+    if isinstance(x,complex):
+        return 1.0+0.0j
+    if isinstance(x,fl):
+        return fl(1.0)
+    if isinstance(x,mycomplex):
+        return mycomplex(one(x.real),0.0)
+
+class ad:
+    """Automatic differentiation type. An ad has two attributes, x and dx."""
+    def __init__(self,x=0,dx=0):
+        self.x,self.dx=x,dx
+    def __add__(a,b):
+        """ad's add like vectors."""
+        return ad(a.x+b.x,a.dx+b.dx)
+    def __sub__(a,b):
+        """ad's subtract like vectors."""
+        return ad(a.x-b.x,a.dx-b.dx)
+    def __mul__(a,b):
+        """The product of ad's is given by the "product rule" of differentation:
+        (x,dx)*(y,dy)=(xy,xdy+ydx)."""
+	return ad(a.x*b.x,a.dx*b.x+a.x*b.dx)
+    def __div__(a,b):
+        """The quotient rule of differentiation gives
+        (x,dx)/(y,dy)=(x/y,(ydx-xdy)/(y*y))."""
+        return ad(a.x/b.x,(a.dx*b.x-a.x*b.dx)/(b.x*b.x))
+    def __coerce__(self,other):
+        if isinstance(other,ad):
+            return (self,other)
+        return (self,ad(other))
+    def pr(a):
+        return pr(a.x)+' '+pr(a.dx)
+
+def rat(x):
+    """This is just a quotient of two polynomials p/q, with degree p=11 and
+    degree q=7."""
+    return (x*2+pwr(x,2)*3+pwr(x,6)*7+pwr(x,11)*5+1)/(x*5-pwr(x,3)*6-pwr(x,7)*3+2)
+
+def newton(x0,n,g):
+    """The newton iteration computes the zero of g starting with initial guess
+    x0. This implementation iterates n times and then returns the answer."""
+    for i in range(n):
+        val=g(ad(x0,one(x0)))
+        x0=x0-val.x/val.dx
+    return x0
+
+def mysqrt(x):
+    """This isn't actually a square root. However, newton(1,10,mysqrt) should
+    return the square root of 2 (1.4142...)."""
+    return sqr(x)-ad(2)
+
+class trapezoid_method_rooter:
+    """The trapezoid method (see below) works by computing the solution of some
+    problem of the form h(x)=0. This class implements the function h needed
+    in the trapezoid method."""
+    def __init__(self,g,y0,t0,t1):
+        self.g,self.y0,self.t0,self.t1=g,y0,t0,t1
+        self.g0=g(t0,y0)
+    def __call__(self,y1):
+        """The function is (g(t1,y1)-g(t0,y0))*(t1-t0)/2+y0-y1. The parameters
+        t0,y0,t1,g are set at construction time, so the only parameter left is
+        y1."""
+#        raz=(self.g(ad(self.t1),y1))
+        ret=(self.g(ad(self.t1),y1)+self.g0)*((self.t1-self.t0)/2)+ad(self.y0)-y1
+#        print "t0",pr(self.t0),"t1",pr(self.t1),"y0",pr(self.y0),"g0",pr(self.g0),"y1",pr(y1),"ret",pr(ret),"raz",pr(raz)
+        return ret
+
+def trapezoid_method(t0,dt,y0,g,numsteps):
+    """This function will approximate the solution of y'=g(t,y) at time
+    t0+numsteps*dt with initial value y(t0)=y0 using the trapezoid method
+    of numerical integration."""
+    for i in range(numsteps):
+        foo=trapezoid_method_rooter(g,y0,t0,t0+dt)
+        y0=newton(y0,10,foo)
+        t0=t0+dt
+    return y0
+
+def sqrintegrand(t,y):
+    """This is a version of sqr which has the correct signature so that it can
+    be passed to trapezoid_method. The first parameter, t, is ignored.
+    The second parameter, y, is passed on to sqr."""
+    return sqr(y)
+def ratintegrand(t,y):
+    """This is a version of the rational function rat above that can be passed
+    to trapezoid_method. In this instance, we do use the t parameter."""
+    return rat(y)-t
+
+def integrate_functions(t0,x0,dt,n):
+    """Integrate sqrintegrand and ratintegrand with given initial value.
+    Depending on the type of initial value, this will result in float, complex,
+    iv or complex iv integration."""
+    print ('i1 '+pr(trapezoid_method(t0,dt,x0,sqrintegrand,n)))
+    print ('i2 '+pr(trapezoid_method(t0,dt,x0,ratintegrand,n)))
+
+try:
+    N = int(sys.argv[1])
+except:
+    N = 50
+print ('rational_taylor_series: '+pr(rat(ad(0.25,1))))
+print ('newton-sqrt_2: '+pr(newton(1.0,10,mysqrt)))
+x=newton(-1.0,6,rat)
+print ('newton-rat: '+pr(x))
+integrate_functions(1.0,0.02,1.0/(4*N),4*N)
+integrate_functions(fl(1.0),fl(0.02),fl(1.0)/fl(float(N)),N)
+integrate_functions(1.0+0.0j,0.02+0.02j,1.0/N,N)
+integrate_functions(mycomplex(fl(1.0),fl(0.0)),mycomplex(fl(0.02),fl(0.02)),mycomplex(fl(1.0))/mycomplex(fl(float(N))),N)
+

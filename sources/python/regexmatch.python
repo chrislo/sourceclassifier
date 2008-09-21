@@ -1,0 +1,36 @@
+#!/usr/pkg/bin/python
+# $Id: regexmatch.python,v 1.1.1.1 2004-05-19 18:11:27 bfulgham Exp $
+# http://www.bagley.org/~doug/shootout/
+
+import sys, re
+
+def main():
+    NUM = int(sys.argv[1])
+    if NUM < 1:
+        NUM = 1
+
+    phones = sys.stdin.readlines()
+
+    rx = re.compile(
+        r'(?:^|[^\d\(])'
+        r'(?:\((\d\d\d)\)|(\d\d\d))'
+        r'[ ]'
+        r'(\d\d\d)'
+        r'[ -]'
+        r'(\d\d\d\d)'
+        r'\D'
+        )
+
+    findIt = rx.search
+    count = 0
+    for i in xrange(0,NUM):
+        for line in phones:
+            m = findIt(line)
+            if m:
+                g = m.group
+                num = "(" + (g(1) or g(2)) + ") " + g(3) + "-" + g(4)
+                if 0 == i:
+                    count = count + 1
+                    print "%d: %s" % (count, num)
+
+main()

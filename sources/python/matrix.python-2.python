@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# $Id: matrix.python-2.python,v 1.1 2004-11-10 06:47:57 bfulgham Exp $
+# from Kevin Turner
+# this example uses NumPy:
+# Numeric Python is available at http://www.pfdubois.com/numpy/
+
+import sys
+from Numeric import *
+
+size = 30
+
+def main():
+    iter = int(sys.argv[1])
+
+    # Create an array of size*size consecutive numbers (starting at 1,
+    # not 0), and reshape it into a (size, size) matrix.
+    m1 = reshape(arange(1, size*size + 1), (size,size))
+    m2 = reshape(arange(1, size*size + 1), (size,size))
+    for i in xrange(iter):
+        mm = matrixmultiply(m1, m2)
+    print mm[0][0], mm[2][3], mm[3][2], mm[4][4]
+
+main()

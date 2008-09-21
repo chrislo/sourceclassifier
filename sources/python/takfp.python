@@ -1,0 +1,19 @@
+
+
+import sys
+
+
+def takfp(x, y, z):
+    if y >= x:
+        return z
+    return takfp(takfp(x - 1.0, y, z), takfp(y - 1.0, z, x), takfp(z - 1.0, x, y))
+
+def main():
+    try:
+        n = float(sys.argv[1])
+    except:
+        print "Usage: %s <N>" % sys.argv[0]
+
+    print takfp(n * 3.0, n * 2.0, n * 1.0)
+
+main()

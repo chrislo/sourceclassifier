@@ -1,0 +1,145 @@
+#!/usr/bin/python
+##   The Computer Language Shootout
+##   http://shootout.alioth.debian.org/
+##
+##   benchmark implementation (not optimized)
+##   contributed by Josh Goldfoot
+
+import sys
+import Queue
+import bisect
+
+n = mn = 0
+
+class PriorityQueue(Queue.Queue):
+    def _init(self, maxsize):
+        self.maxsize = maxsize
+        self.queue = [] 
+    def _put(self, item):
+        bisect.insort(self.queue, item)
+    def _get(self):
+        return self.queue.pop(0) 
+
+class square(object):
+    __slots__ = ['grid', 'ffm', '__priority']
+    def __init__(self):
+        self.grid = [0 for i in xrange(n * n)]
+        self.ffm = None
+        self.__priority = None
+    def copy(self):
+        ret = square()
+        ret.grid[:] = self.grid
+        return ret
+    def gridRow(self, y):
+        return [ self.grid[x + y * n] for x in xrange(n)]
+    def gridCol(self, x):
+        return [ self.grid[x + y * n] for y in xrange(n)]
+    def __str__(self):
+        return "\n".join( [" ".join([str(self.grid[x + y * n])
+                    for x in xrange(n)]) for y in xrange(n)])
+    def possibleMoves(self, x,y):
+##Return all moves that can go in the cell x,y for a given
+##grid.  A move is possible if the move (number) is not already
+##in the grid, and if, after making that move, it is still possible to
+##satisfy the magic square conditions (all rows, columns, diagonals adding
+##up to mn, the magic number)
+        if self.grid[x + y * n] != 0:
+            return []
+        cellGroups = [self.gridRow(y), self.gridCol(x)]
+        if x == y:
+            cellGroups.append([ self.grid[i + i * n] for i in xrange(n) ])
+        if x + y == n - 1:
+            cellGroups.append([ self.grid[i + (n - 1 - i) * n] for i in xrange(n) ])
+        usedNumbers = set(self.grid)
+        onePossible = set()
+        for g in cellGroups:
+            if g.count(0) == 1:
+                onePossible.add(mn - sum(g))
+        if len(onePossible) == 1:
+            onlyPossibleMove = onePossible.pop()
+            if 1 <= onlyPossibleMove <= n*n and onlyPossibleMove not in usedNumbers:
+                return [onlyPossibleMove]
+            else:
+                return []
+        elif len(onePossible) > 1:
+            return []
+        highestCandidates = [mn - sum(g) for g in cellGroups]
+        highestCandidates.append(n * n)
+        highest = min(highestCandidates)
+        return [ i for i in xrange(highest + 1) if i not in usedNumbers ]
+    def findFewestMoves(self):
+##Go through the grid (starting at the top-left, and moving
+##right and down), checking all 0 cells to find the cell with the fewest
+##possible moves.
+        if self.ffm:
+            return self.ffm
+        minSoFar = []
+        minX = minY = None
+        minLenSoFar = 0
+        for y in xrange(n):
+            for x in xrange(n):
+                ind = x + y * n
+                if self.grid[ind] == 0:
+                    pm = self.possibleMoves(x,y)
+                    if minX == None or len(pm) < minLenSoFar:
+                        minSoFar[:] = pm
+                        minLenSoFar = len(pm)
+                        minX = x
+                        minY = y
+        self.ffm = (minSoFar, minLenSoFar, minX, minY)
+        return self.ffm
+        return (minSoFar, minLenSoFar, minX, minY)
+    
+    def successorNodes(self):
+##successorNodes: Find the cell with the fewest
+##possible moves left, and then creates a new node for each possible move
+##in that cell.  
+        (pm, len_pm, x, y) = self.findFewestMoves()
+        node = self.copy()  # Create a copy of yourself
+        ind = x + y * n
+        for move in pm:
+            node.grid[ind] = move
+            yield node
+    def priority(self):
+##The priority function is:
+##(number of zeros in the grid) plus
+##(number of possible moves in the cell with the fewest possible moves)
+##the lower the priority, the sooner the node will be popped from the queue.
+        if self.__priority == None:
+            (pm, len_pm, x, y) = self.findFewestMoves()
+            self.__priority = self.grid.count(0) + len_pm
+        return self.__priority
+    def __cmp__(self, other):
+##The priority queue is sorted first by
+##the node's calculated priority; then, if the priorities
+##are equal, by whichever node has the lowest numbers
+##in the top-left of the array (or the next cell over,
+##and so on).
+        c = cmp(self.priority(), other.priority())
+        if c == 0:
+            i = 0
+            while c == 0 and i < n * n:
+                c = cmp(self.grid[i], other.grid[i])
+                i += 1
+        return c
+
+def main():
+    global n, mn
+    n = len(sys.argv) > 1 and int(sys.argv[1]) or 3
+    mn = n * (1 + n * n) / 2
+    # Initialize priority queue and push a square full of zeros on it
+    priorityQueue = PriorityQueue()
+    priorityQueue.put( square() )
+    # Loop through the priority queue...
+    while not priorityQueue.empty():
+        node = priorityQueue.get()
+        # if priority is 0, then this is a complete square; stop
+        if node.priority() == 0:
+            break
+        # otherwise, add to the queue all squares that can be derived by filling in
+        #  one cell in this magic square
+        for newnode in node.successorNodes():
+            priorityQueue.put(newnode.copy() )
+    if node.priority() == 0:
+        print node
+main()

@@ -1,0 +1,43 @@
+# The Computer Language Shootout Benchmarks
+# http://shootout.alioth.debian.org/
+#
+# contributed by Kevin Carson (Python 2.4 or greater required)
+# optimized by Giovanni Bajo
+
+import sys
+
+def primes_in_range(M) :
+    bits = [0xFF]*((M + 7) // 8)
+    set_bits = [1 << i for i in range(8)]
+    unset_bits = [~(1 << i) for i in range(8)]
+
+    count = 0
+    for i in xrange(2, M) :
+        if bits[i>>3] & set_bits[i&7]:
+            for j in xrange(i*2, M, i):
+                bits[j>>3] &= unset_bits[j&7]
+            count += 1
+
+    return count
+
+def Usage() :
+    print "Usage: %s <N >= 2>" % sys.argv[0]
+
+
+def main() :
+    if len(sys.argv) == 2 :
+        N = int(sys.argv[1])
+        if N < 2 :
+            Usage()
+            return
+    else :
+        Usage()
+        return
+
+    for i in xrange(0,3) :
+        M = (1 << (N - i)) * 10000
+        count = primes_in_range(M)
+        print "Primes up to %8u %8u" % (M, count)
+
+main()
+

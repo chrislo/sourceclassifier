@@ -1,0 +1,17 @@
+#!/usr/bin/python
+# $Id: spellcheck.python,v 1.2 2005-02-19 17:05:39 bfulgham Exp $
+# http://shootout.alioth.debian.org/
+#
+# From Tupteq, based on original code by Fred Bremmer
+
+import sys
+
+def main():
+    dict = set(line[:-1] for line in file("Usr.Dict.Words") if line != '\n')
+
+    for line in sys.stdin:
+        word = line[:-1]
+        if word and word not in dict:
+	    print word
+
+main()

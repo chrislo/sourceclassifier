@@ -1,0 +1,51 @@
+#!/usr/bin/python -OO
+# The Computer Language Shootout Benchmarks
+# http://shootout.alioth.debian.org/
+#
+# contributed by Kevin Carson
+
+from threading import Thread
+from Queue import Queue
+from sys import argv
+
+
+class link(Thread) :
+    def __init__(self, next) :
+        Thread.__init__(self)
+        self.next = next
+        self.inq = Queue(1)
+
+    def run(self) :
+        self.store = self.inq.get()
+        self.next.inq.put(self.store + 1)
+
+
+class terminus(Thread) :
+    def __init__(self) :
+        Thread.__init__(self)
+        self.inq = Queue(1)
+
+    def run(self) :
+        self.sum = self.inq.get()
+        print "%d" % self.sum
+
+
+N = int(argv[1])
+
+# Create the chain of threads then fire them up
+chain_length = N + 1
+tasks = [None] * chain_length
+tasks[N] = terminus()
+tasks[N - 1] = link(tasks[N])
+
+for i in xrange(N - 2, -1, -1) :
+    tasks[i] = link(tasks[i + 1])
+
+for i in xrange(chain_length) :
+    tasks[i].start()
+
+# Feed the chain with an integer message
+tasks[0].inq.put(0)
+
+# Wait upon the terminus process
+tasks[N].join()

@@ -1,0 +1,32 @@
+/* The Computer Language Benchmarks Game
+   http://shootout.alioth.debian.org/
+   modified by … James Antill - 2007-06-14
+   modified by Arek Bochinski - 2008-05-04
+ */
+
+#define _GNU_SOURCE 1
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAXLINELEN 128
+
+int matoi(char *c) {
+      int res = 0,n=1;
+      if(*c=='-'){n=-1;*c++;}
+      while (*c >= '0' && *c <= '9')
+      	 res = res * 10 + *c++ - '0';
+      return res*n;
+    }
+
+int
+main() {
+    int sum = 0;
+    char line[MAXLINELEN];
+
+    while (fgets_unlocked(line, MAXLINELEN, stdin)) {
+	sum += matoi(line);
+    }
+    printf("%d\n", sum);
+    return(0);
+}
+

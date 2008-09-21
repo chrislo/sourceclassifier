@@ -1,0 +1,122 @@
+/* 
+ The Great Computer Language Shootout
+  http://shootout.alioth.debian.org/
+
+  contributed by John O'Hare 05 August 2005.
+*/
+
+
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#define PORT_NUMBER 12342
+#define M 1
+#define REPLY_SIZE 409600
+#define REQUEST_SIZE 64
+#define BUFFER_SIZE 1024
+
+void server()
+{
+	int sock;
+	int conn;
+	struct sockaddr_in servaddr;
+	struct sockaddr_in cliaddr;
+	unsigned int cliaddr_len;
+	char* reply = malloc(REPLY_SIZE);
+	char* buf = malloc(BUFFER_SIZE);
+
+	memset(reply, '<', REPLY_SIZE);
+
+	if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
+		exit(10);
+
+	memset(&servaddr, 0, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	servaddr.sin_port = htons(PORT_NUMBER);
+
+	if (bind(sock, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
+		exit(11);
+
+	if (listen(sock, 1) < 0)
+		exit(12);
+
+	if ((conn = accept(sock, (struct sockaddr *) &cliaddr, &cliaddr_len)) < 0)
+		exit(13);
+
+	while (recv(conn, buf, BUFFER_SIZE, 0) > 0) {
+		if (send(conn, reply, REPLY_SIZE, 0) != REPLY_SIZE)
+			exit(14);
+	}
+
+	close(conn);
+	close(sock);
+
+	free(buf);
+}
+
+void client(int n)
+{
+	int sock;
+	struct sockaddr_in servaddr;
+	char* request = malloc(REQUEST_SIZE);
+	char* buf = malloc(BUFFER_SIZE);
+	int tmpbytes;
+	int bytes = 0;
+	int replies = 0;
+
+	memset(request, '>', REQUEST_SIZE);
+
+	sleep(2); //wait for server to start
+
+	if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) 
+		exit(2);
+
+	memset(&servaddr, 0, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+	servaddr.sin_port = htons(PORT_NUMBER);
+
+	if (connect(sock, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
+		exit(3);
+
+	while (n-- > 0) {
+		tmpbytes = 0;
+
+		if (send(sock, request, REQUEST_SIZE, 0) != REQUEST_SIZE)
+			exit(4);
+
+		while (tmpbytes < REPLY_SIZE)
+			tmpbytes += recv(sock, buf, BUFFER_SIZE - 1, 0);
+		bytes += tmpbytes;
+		replies++;
+	}
+	close(sock);
+
+	printf("replies: %d\tbytes: %d\n", replies, bytes);
+
+	free(request);
+	free(buf);
+}
+
+int main (int argc, char** argv)
+{	
+	int pid;
+	int n;
+
+	n = (argc == 2 ? atoi(argv[1]) : 1);
+
+	if ((pid = fork()) < 0) {
+		return 1;
+	}
+	if (pid == 0) {
+		client(M * n);
+	} else {
+		server();
+	}
+	return 0;
+}

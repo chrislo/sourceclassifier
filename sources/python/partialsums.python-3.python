@@ -1,0 +1,48 @@
+# The Computer Language Shootout
+# http://shootout.alioth.debian.org/
+#
+# contributed by Daniel Nanz 2008-03-18
+
+import sys
+import numpy
+
+def doit(n, buf_size=50000, np=numpy):
+
+    n_low = 1
+    if buf_size <= n:
+        todo = buf_size
+    else:
+        todo = n
+    sums = np.zeros(9, dtype=np.double)
+    sums[0] += 1.
+    while todo > 0:
+        n_high = n_low + todo
+        k = np.arange(n_low, n_high, dtype=np.int8)
+        alt = (2 * (k & 1)) - 1
+        k = np.arange(n_low, n_high, dtype=np.double)
+        k2 = k * k
+        k3 = k * k2
+        ks = np.sin(k)
+        kc = np.cos(k)
+        sums += map(np.sum,
+                    ((2. / 3.) ** k,
+                     k ** -.5,
+                     1. / (k * (k + 1.)),
+                     1. / (k3 * ks * ks),
+                     1. / (k3 * kc * kc),
+                     1. / k,
+                     1. / k2,
+                     alt / k,
+                     alt / (k + k - 1.)))
+        n_low = n_high
+        if (n - buf_size) > n_low:
+            todo = buf_size
+        else:
+            todo = n - n_low + 1
+
+    fmt = '\n%0.9f\t'
+    nms = ['(2/3)^k', 'k^-0.5', '1/k(k+1)', 'Flint Hills', 'Cookson Hills',
+           'Harmonic', 'Riemann Zeta', 'Alternating Harmonic', 'Gregory']
+    print (fmt[1:] + fmt.join(nms)) % tuple(sums)
+
+doit(int(sys.argv[1]))

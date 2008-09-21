@@ -1,0 +1,27 @@
+# The Computer Language Benchmarks Game
+# http://shootout.alioth.debian.org/
+# Written by Nate Atkinson, 2008-4-4
+# Based on code by Dima Dorfman, Heinrich Acker, Dani Nanz
+
+import sys
+
+N = int(sys.argv[1])
+M = ((2 ** N) * 10000)
+MP = M // 2
+BL = [False, False] + ([True] * (M - 1))
+for I, IP in enumerate(BL):
+    if IP and (I <= MP):
+        BL[I + I::I] = [False] * ((M - I) // I)
+
+OL = []
+a = 0
+c = 0
+for x in range(N - 2, N + 1):
+    b = (1<< x) * 10000
+    c += sum(BL[a:b])
+    OL.append((b, c))
+    a = b
+
+OL.reverse()
+for x, y in OL:
+    print "Primes up to %8d %8d" %(x, y)
