@@ -19,8 +19,8 @@ task :default => [:test_units]
 desc "Run basic tests"
 Rake::TestTask.new("test_units") { |t|
   t.pattern = 'test/test_*.rb'
-  t.verbose = true
-  t.warning = true
+  t.verbose = false
+  t.warning = false
 }
 
 desc "Populate training data directories"
