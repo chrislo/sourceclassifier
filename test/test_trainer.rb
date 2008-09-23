@@ -23,8 +23,12 @@ class TestTrainer < Test::Unit::TestCase
   end
 
   def test_train
-    assert(@t.classifier.system.categories.include?("Ruby"))
-    assert(@t.classifier.system.categories.include?("Gcc"))
+    assert(@t.classifier.categories.include?("Ruby"))
+    assert(@t.classifier.categories.include?("Gcc"))
+  end
+
+  def test_creates_output_file
+    assert(File.exists?(@output_dir + "/trainer.bin"))
   end
 
 end

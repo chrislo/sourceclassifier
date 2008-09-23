@@ -11,23 +11,29 @@ class Trainer
   end
 
   def train(sources_dir,output_dir)
-    b = SnapshotMadeleine.new(output_dir) {
-      Classifier::Bayes.new 
-    }
+    b = Classifier::Bayes.new 
 
     languages = Trainer.languages_for(sources_dir)
     
     languages.each do |language|
-      b.system.add_category language
+      b.add_category language
 
       files = Trainer.files_for(sources_dir,language)
       files.each do |f|
         file_content = File.read(f)
-        b.system.train language, file_content
+        b.train language, file_content
       end
     end
-    b.take_snapshot
+
+    marshal(output_dir,b)
     return b
+  end
+  
+  def marshal(output_dir, data)
+    FileUtils.mkdir_p(output_dir)
+    Dir.chdir(output_dir) do
+      open("trainer.bin", "w") { |f| Marshal.dump(data, f) }
+    end
   end
 
   def self.languages_for(sources_dir)
