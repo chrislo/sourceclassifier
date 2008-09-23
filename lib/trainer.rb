@@ -1,5 +1,4 @@
 require 'classifier'
-require 'madeleine'
 require 'ruby-debug'
 
 
@@ -29,13 +28,6 @@ class Trainer
     return b
   end
   
-  def marshal(output_dir, data)
-    FileUtils.mkdir_p(output_dir)
-    Dir.chdir(output_dir) do
-      open("trainer.bin", "w") { |f| Marshal.dump(data, f) }
-    end
-  end
-
   def self.languages_for(sources_dir)
     languages = Dir["#{sources_dir}/*"].map {|dir| dir.split("/").last}
   end
@@ -43,5 +35,16 @@ class Trainer
   def self.files_for(sources_dir,language)
     files = Dir["#{sources_dir}/#{language}/*"]
   end
+
+  private
+
+  def marshal(output_dir, data)
+    FileUtils.mkdir_p(output_dir)
+    Dir.chdir(output_dir) do
+      open("trainer.bin", "w") { |f| Marshal.dump(data, f) }
+    end
+  end
+
+
 
 end
