@@ -23,7 +23,8 @@ class TestSourceClassifier < Test::Unit::TestCase
   end
 
   def test_identify
-    # Test the classifier with one of the files used to train it. This should always return the correct source code type
+    # Test the classifier with one of the files used to train it. This
+    # should always return the correct source code type
     str = open(File.join(File.dirname(__FILE__), 'fixtures', 'sources','ruby','ackermann.ruby')) {|f| f.read}
     assert_equal("Ruby",@c.identify(str))
   end
