@@ -9,7 +9,7 @@ class TestSourceClassifier < Test::Unit::TestCase
     sources_dir = File.join(File.dirname(__FILE__), 'fixtures', 'sources')
     @output_dir = File.join(File.dirname(__FILE__), 'fixtures', 'output')
     Trainer.new(sources_dir,@output_dir)
-    @classifier = SourceClassifier.new(@output_dir + "/trainer.bin")
+    @c = SourceClassifier.new(@output_dir + "/trainer.bin")
   end
 
   def teardown
@@ -18,8 +18,14 @@ class TestSourceClassifier < Test::Unit::TestCase
 
   def test_languages
     ["Ruby","Python","Gcc"].each do |language|
-      assert(@classifier.languages.include?(language))
+      assert(@c.languages.include?(language))
     end
+  end
+
+  def test_identify
+    # Test the classifier with one of the files used to train it. This should always return the correct source code type
+    str = open(File.join(File.dirname(__FILE__), 'fixtures', 'sources','ruby','ackermann.ruby')) {|f| f.read}
+    assert_equal("Ruby",@c.identify(str))
   end
 
 end

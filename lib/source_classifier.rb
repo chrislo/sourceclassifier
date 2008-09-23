@@ -8,4 +8,8 @@ class SourceClassifier
     @c.categories
   end
 
+  def identify(str)
+    @c.classify(str)
+  end
+
 end
