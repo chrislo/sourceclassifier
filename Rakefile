@@ -41,3 +41,9 @@ task :populate do
     end
   end
 end
+
+desc "Train using training data directory"
+task :train do
+  require './lib/trainer.rb'
+  t = Trainer.new('./sources','./')
+end
