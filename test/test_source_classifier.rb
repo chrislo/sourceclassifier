@@ -16,6 +16,14 @@ class TestSourceClassifier < Test::Unit::TestCase
     FileUtils.rm_r @output_dir
   end
 
+  def test_default_training_file
+    require 'ftools'
+    assert_equal(@c.training_file, @output_dir + "/trainer.bin")
+    
+    d = SourceClassifier.new()
+    assert(File.compare(d.training_file, File.join(File.dirname(__FILE__), '..', 'trainer.bin')))
+  end
+
   def test_languages
     ["Ruby","Python","Gcc"].each do |language|
       assert(@c.languages.include?(language))
