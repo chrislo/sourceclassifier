@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'classifier'
 require 'ruby-debug'
 
