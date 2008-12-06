@@ -1,0 +1,19 @@
+#!/usr/bin/python
+# The Great Computer Language Shootout
+# http://shootout.alioth.debian.org/
+#
+# contributed by kosh
+
+import sys
+
+def main():
+    nl = nw = nc = 0
+
+    for line in sys.stdin:
+        nl += 1
+        nc += len(line)
+        nw += len(line.split())
+
+    print "%d %d %d" % (nl, nw, nc)
+
+main()

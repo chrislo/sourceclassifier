@@ -1,0 +1,50 @@
+#!/usr/bin/python 
+# $Id: sieve.python,v 1.4 2004-08-05 07:07:03 bfulgham Exp $
+# http://shootout.alioth.debian.org/
+# with help from Brad Knotwell
+
+#uncomment for psyco JIT
+#import psyco
+#psyco.full()
+
+import sys
+
+def main():
+    try:
+        NUM = int(sys.argv[1])
+    except:
+        NUM = 1
+
+    for foo in xrange(0,NUM):
+        count = 0
+        flags = (8193) * [1]
+        for i in xrange(2,8193):
+            if flags[i]:
+                # remove all multiples of prime: i
+                k = i + i
+                while k < 8193:
+                    flags[k] = 0
+                    k = k + i
+                count += 1    
+    print "Count:", count
+    #uncomment to verify the algorithm
+    #n = 0
+    #for i in range(200):
+    #    if flags[i]:
+    #        print n
+    #    n += 1
+
+main()
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,21 @@
+#!/usr/bin/python
+# $Id: hash.python,v 1.1.1.1 2004-05-19 18:09:55 bfulgham Exp $
+# http://www.bagley.org/~doug/shootout/
+# with help from from Gustavo Niemeyer
+
+import sys
+#sys.setcheckinterval(10000)
+
+def main():
+    n = int(sys.argv[1])
+    X = {}
+    myhex = hex
+    for i in xrange(1,n+1):
+        X[myhex(i)[2:]] = i
+    c = 0
+    has_key = X.has_key
+    for i in xrange(n, 0, -1):
+        c += has_key(`i`)
+    print c
+
+main()

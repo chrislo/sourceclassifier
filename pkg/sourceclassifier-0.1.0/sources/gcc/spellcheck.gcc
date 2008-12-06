@@ -1,0 +1,72 @@
+/* -*- mode: c -*-
+ * $Id: spellcheck.gcc,v 1.1.1.1 2004-05-19 18:13:26 bfulgham Exp $
+ * http://www.bagley.org/~doug/shootout/
+ * with help from Brad Knotwell
+ */
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "simple_hash.h"
+
+#define MAXLINELEN 128
+
+struct ht_ht *dict = NULL;
+
+int handleInput(FILE *input,void (*hashManipFn)(char *))
+{
+    int wordbufsize = 80,i = 0;
+    char *cp, *wordbuf = (char *)malloc(wordbufsize + 1);
+    char line[MAXLINELEN];
+    
+    if((wordbuf = malloc(wordbufsize+1)) == NULL) 
+        return(fprintf(stderr,"malloc\n"),0);
+
+    while (fgets(line, MAXLINELEN, input))
+	for (cp=line; *cp > 0; cp++) {
+	    if (isspace(*cp)) {
+		if (i) {
+		    wordbuf[i] = '\0';
+                    hashManipFn(wordbuf);
+		    i = 0;
+		}
+	    } else {
+		wordbuf[i++] = *cp;
+		if (i == wordbufsize) {
+		    wordbufsize *= 2;
+		    if((wordbuf = realloc(wordbuf, wordbufsize + 1)) == NULL)
+                        return(fprintf(stderr, "realloc\n"), 0);
+		}
+	    }
+        }
+
+    free(wordbuf);
+    return(1);
+}
+
+void spellCheck(char *key) { 
+    if (ht_find_new(dict,key)->val != 1) printf("%s\n",key);
+}
+
+void hashLoad(char *key) { ht_find_new(dict,key)->val = 1; }
+ 
+int main(int argc, char *argv[]) {
+    FILE *fh;
+    int rc;
+
+    /*  
+        ht_create doesn't handle malloc and calloc failures 
+        so this is superfluous 
+    */
+    if((dict = ht_create(40000)) == NULL)
+        return(fprintf(stderr,"hash creation failed\n"),EXIT_FAILURE);
+    
+    if ((fh = fopen("Usr.Dict.Words", "r")) == NULL) 
+        return(fprintf(stderr,"couldn't open dictionary\n"),EXIT_FAILURE);
+
+    rc = ((handleInput(fh,hashLoad) && handleInput(stdin,spellCheck)) ? EXIT_SUCCESS : EXIT_FAILURE);
+
+    ht_destroy(dict);
+    return(rc);
+}

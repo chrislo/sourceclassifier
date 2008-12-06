@@ -1,0 +1,85 @@
+/* -*- mode: c -*-
+ * $Id: wordfreq.gcc-2.gcc,v 1.1 2004-11-10 06:40:32 bfulgham Exp $
+ * http://www.bagley.org/~doug/shootout/
+ * From Kerry Clendinning
+ */
+
+#include <stdio.h>
+#include <ctype.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define NALPHA 26		/* number of letters in the alphabet */
+struct onebytehash {
+    int count;
+    struct onebytehash *next_chain,*next_hash[NALPHA];
+    char string[1];		/* one of those stretchy string-things */
+};
+
+int compare(struct onebytehash **a, struct onebytehash **b);
+typedef int (*comparator)(const void *, const void *);
+
+int
+main()
+{
+    int c, nextc, i = 0, curbufsz = 200, used_hash_count = 0;
+    struct onebytehash the_hash = {0,NULL},
+	*current_hash = &the_hash, *chain = NULL;
+    struct onebytehash **sort_array, **sort_tmp;
+    char *buf;
+
+    buf = malloc(curbufsz + 1);
+    c = getchar();
+    while ( (nextc = getchar()) > 0 ) {
+        if (isalpha(c)) {
+            buf[i++] = tolower(c);
+            buf[i] = '\0';
+            c = tolower(c) - 'a';
+            if (!current_hash->next_hash[c]) {
+                if (i >= curbufsz) {
+		    curbufsz *= 2;
+		    buf = realloc(buf,curbufsz + 1);
+                } 
+                current_hash->next_hash[c] =
+		    malloc(sizeof(struct onebytehash) + i+1);
+                bzero(current_hash->next_hash[c],sizeof(struct onebytehash));
+                current_hash->next_hash[c]->next_chain = chain;
+                chain = current_hash->next_hash[c];
+                strcpy(chain->string,buf);
+            }
+            current_hash = current_hash->next_hash[c];
+            if (!isalpha(nextc)) {
+                if (!current_hash->count) used_hash_count++;
+                current_hash->count++;
+            }
+        } else {
+            current_hash = &the_hash;
+            i = 0;
+        }
+        c = nextc;
+    }
+
+    sort_array = sort_tmp =
+	malloc(sizeof(struct onebytehash *) * used_hash_count);
+    while (chain) {
+	if (chain->count) *sort_tmp++ = chain;
+	chain = chain->next_chain;
+    }
+
+    qsort(sort_array, used_hash_count, sizeof(struct onebytehash *),
+	  (comparator) compare);
+
+    for (i=0;i<used_hash_count;i++)
+	printf("%7d\t%s\n", sort_array[i]->count,sort_array[i]->string); 
+
+    /* don't forget to free allocated memory here */
+
+    return(0);
+}
+
+int compare(struct onebytehash **a, struct onebytehash **b)
+{
+    if ((*b)->count == (*a)->count) return (strcmp((*b)->string,(*a)->string));
+    return ((*b)->count - (*a)->count);
+}

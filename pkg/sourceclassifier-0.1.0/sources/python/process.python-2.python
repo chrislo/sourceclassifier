@@ -1,0 +1,133 @@
+#!/usr/bin/python -OO
+# The Computer Language Shootout Benchmarks
+# http://shootout.alioth.debian.org/
+#
+# contributed by Antoine Pitrou
+
+import sys
+
+#
+# A very simple cooperative threads package using generators,
+#
+
+def singleton(cls):
+    instance = []
+    def wrapper(*args, **kargs):
+        if not instance:
+            instance.append(cls(*args, **kargs))
+        return instance[0]
+    return wrapper
+
+class WaitObject(object):
+    def __init__(self, switcher=None):
+        self.switcher = switcher or global_switcher()
+        self.waiters = []
+    
+    def get_waiter(self):
+        try:
+            return self.waiters.pop()
+        except IndexError:
+            return None
+
+    def add_waiter(self, waiter):
+        self.waiters.append(waiter)
+    
+    def set_ready(self, ready):
+        self.switcher.set_ready(self, ready)
+
+class Queue(WaitObject):
+    def __init__(self):
+        WaitObject.__init__(self)
+        self.data = []
+
+    def put(self, value):
+        self.data.append(value)
+        self.set_ready(True)
+    
+    def get(self):
+        self.set_ready(len(self.data) > 1)
+        return self.data.pop(0)
+
+class _Ready(WaitObject):
+    def __init__(self):
+        WaitObject.__init__(self)
+        self.set_ready(True)
+
+# Special-casing Ready as a singleton is important for scalability
+Ready = singleton(_Ready)
+
+class Thread(object):
+    def __init__(self, switcher=None):
+        self.switcher = switcher or global_switcher()
+        self.switcher.add_thread(self)
+
+class Switcher(object):
+    def __init__(self):
+        self.threads = set()
+        self.ready_objects = set()
+    
+    def add_thread(self, thread):
+        Ready().add_waiter(thread)
+        thread.runner = thread.run()
+        self.threads.add(thread)
+
+    def set_ready(self, wait_object, ready):
+        if ready:
+            self.ready_objects.add(wait_object)
+        else:
+            self.ready_objects.discard(wait_object)
+
+    def run(self):
+        while len(self.threads):
+            for r in self.ready_objects:
+                thread = r.get_waiter()
+                if not thread or not thread.runner:
+                    continue
+                try:
+                    wait_object = thread.runner.next()
+                except StopIteration:
+                    thread.runner = None
+                    self.threads.remove(thread)
+                else:
+                    wait_object.add_waiter(thread)
+                break
+
+global_switcher = singleton(Switcher)
+
+#
+# Here the problem-specific definitions
+#
+
+class Link(Thread):
+    def __init__(self, next):
+        Thread.__init__(self)
+        self.next = next
+        self.incoming = Queue()
+
+    def run(self):
+        yield self.incoming
+        self.store = self.incoming.get()
+        self.next.incoming.put(self.store + 1)
+
+class Terminus(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.incoming = Queue()
+
+    def run(self):
+        yield self.incoming
+        self.sum = self.incoming.get()
+        print "%d" % self.sum
+
+def main():
+    N = int(sys.argv[1])
+
+    # Create the chain of threads then run them all
+    task = Terminus()
+    for i in xrange(N):
+        task = Link(task)
+    task.incoming.put(0)
+    
+    global_switcher().run()
+
+main()

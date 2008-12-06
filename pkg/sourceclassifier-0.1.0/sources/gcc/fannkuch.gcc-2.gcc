@@ -1,0 +1,94 @@
+/**
+ * The Computer Language Benchmarks game
+ * http://shootout.alioth.debian.org/
+ *
+ * Contributed by Rodney Drenth
+ *
+ */
+
+
+#include <stdio.h>
+#include <stdlib.h>
+
+void PrintPerm( int *perm, int n)
+{
+   while(n-- >0) printf("%d", 1+*perm++);
+   printf("\n");
+}
+#define XCNG(a,b,t) {t=a;a=b;b=t;}
+
+int fannkuch( int n )
+{
+   int      *count, *perm, *perm1, *perm2, *p1, *pA;
+   int      **prmts;
+   int      flips, maxFlips;
+   int      r, i, k, m, nx;
+   int      check = 30;
+
+    if (n <= 1)
+      return 0;
+
+   prmts = calloc( n, sizeof( int *));
+   perm1 = pA = calloc( (n+4)*n, sizeof(int));
+   perm2 = perm1 + n;
+   count = perm1 + 2*n;
+   perm  = perm1 + 3*n;
+   p1 = perm1 + 4*n;
+   for (r=0; r<n; r++) {
+      prmts[r] = perm1 + (4+r)*n;
+      p1[r] = perm1[r] = r;
+      count[r] = r+1;
+   }
+   for (nx=1; nx<n; nx++) {   // compute permutation operators
+      int *p2 = prmts[nx];
+      for (i=0; i<nx; i++) p2[i] = p1[i+1];
+      p2[i++] = p1[0];
+      for ( ; i<n; i++) p2[i] = p1[i];
+      p1=p2;
+   }
+
+   m = n-1;
+   maxFlips = 1;
+   r = 0;
+   while (1) {
+      if (check>0 ) {
+         PrintPerm( perm1, n);
+         check--;
+      }
+      k = perm1[0];
+      if ( perm1[k]!=0 && (perm1[m]!= m)) {
+         for (i=n; --i>0; ) 
+            perm[i] = perm1[i];   
+         perm[0] = k;
+         for (flips=0; k; flips++) { 
+            int l, *pk;
+            l = (k-1)/2;
+            for( pk = perm+k; l>=0; --l) {
+               XCNG(*(pk-l), *(perm+l), k);
+            };
+            // Note: final exchange leaves perm[0] in k
+          }
+         if (maxFlips < flips) maxFlips = flips;
+      }
+      r = 1;
+      while (--count[r] == 0) {
+         r = count[r] = r+1;
+         if (r== n) {
+            free(prmts); free(pA);
+            return maxFlips;
+         }
+      }
+      // generate permutation nx=5 first time.
+      XCNG(perm1,perm2,p1);
+      if (r>1) nx = r+1;
+      p1 = prmts[r]; 
+      for (i=0; i< nx; i++)
+         perm1[i] = perm2[p1[i]];
+   }
+}
+
+int main( int argc, char* argv[] )
+{
+    int      n = (argc>1) ? atoi(argv[1]) : 1;
+    printf("Pfannkuchen(%d) = %d\n", n, fannkuch(n));
+}

@@ -1,0 +1,30 @@
+#!/usr/bin/python
+# $Id: hash2.python,v 1.2 2004-11-30 07:10:03 bfulgham Exp $
+# http://shootout.alioth.debian.org
+# Contributed by Antoine Pitrou, based on code by Mark Baker
+#
+# 1.  Put critical code in a function -- otherwise the local variable
+#     optimizations by the interpreter don't work.
+# 2.  Iterator versions of common functions are often a bit faster than
+#     other methods (e.g., iterkeys() instead of keys() ).
+
+import sys
+
+def main():
+  n = int(sys.argv[1])
+  hash1 = {}
+  for i in xrange(10000):
+    hash1['foo_' + `i`] = i
+
+  hash2 = {}
+  for i in xrange(n):
+    for k in hash1.iterkeys():
+      try:
+        hash2[k] += hash1[k]
+      except KeyError:
+        hash2[k] = hash1[k]
+
+  print hash1['foo_1'], hash1['foo_9999'], hash2['foo_1'], hash2['foo_9999']
+
+
+main()

@@ -1,0 +1,136 @@
+/* The Great Computer Language Shootout
+   http://shootout.alioth.debian.org/
+
+   contributed by Rodrigo Queiro
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <assert.h>
+
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
+#define M 6400
+#define REPLY_SIZE 64
+#define REQUEST_SIZE 64
+#define MAX_SIZE 64 // max(REPLY_SIZE, REQUEST_SIZE)
+#define PORT 11000
+#define BUFSIZE 512
+
+int main(int argc, char **argv)
+{
+    int i;
+
+    int n;
+    char buf[BUFSIZE], text[MAX_SIZE];
+
+    pid_t child_pid;
+
+    /* server variables */
+
+    int sockfd, newfd;
+    struct sockaddr_in my_addr, new_addr;
+    int sin_size;
+    int yes=1;
+
+    /* client variables */
+
+    int theirfd, nreplies = 0, nbytes = 0;
+    struct hostent *he;
+    struct sockaddr_in their_addr;
+
+    assert(argc > 1);
+    n = atoi(argv[1]);
+
+    child_pid = fork();
+
+    if(child_pid)
+    {
+        /* server code */
+
+        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+            perror("socket");
+            exit(1);
+        }
+
+        if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1) {
+            perror("setsockopt");
+            exit(1);
+        }
+
+        my_addr.sin_family = AF_INET;         // host byte order
+        my_addr.sin_port = htons(PORT);     // short, network byte order
+        my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
+        memset(&(my_addr.sin_zero), '\0', 8); // zero the rest of the struct
+
+        if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr))
+                == -1) {
+            perror("bind");
+            exit(1);
+        }
+
+        if (listen(sockfd, 2) == -1) {
+            perror("listen");
+            exit(1);
+        }
+        sin_size = sizeof(struct sockaddr_in);
+        if ((newfd = accept(sockfd, (struct sockaddr *)&new_addr,
+                        &sin_size)) == -1) {
+            perror("accept");
+            exit(1);
+        }
+
+        for (i = 0; i < REPLY_SIZE; i++)
+            text[i] = ' ';
+
+        for (i = 0; i < n * M; i++)
+        {
+            recv(newfd, buf, BUFSIZE-1, 0);
+            send(newfd, text, REPLY_SIZE, 0);
+        }
+
+        wait(NULL);
+    }
+    else
+    {
+        if ((he=gethostbyname("localhost")) == NULL) {  // get the host info 
+            perror("gethostbyname");
+            exit(1);
+        }
+
+        if ((theirfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+            perror("socket");
+            exit(1);
+        }
+
+        their_addr.sin_family = AF_INET;    // host byte order 
+        their_addr.sin_port = htons(PORT);  // short, network byte order 
+        their_addr.sin_addr = *((struct in_addr *)he->h_addr);
+        memset(&(their_addr.sin_zero), '\0', 8);  // zero the rest of the struct 
+
+        while (connect(theirfd, (struct sockaddr *)&their_addr,
+                    sizeof(struct sockaddr)) == -1);
+
+        for (i = 0; i < REQUEST_SIZE; i++)
+            text[i] = ' ';
+
+        for (i = 0; i < n * M; i++)
+        {
+            send(theirfd, text, REQUEST_SIZE, 0);
+            nbytes += recv(theirfd, buf, BUFSIZE-1, 0);
+            nreplies++;
+        }
+
+        printf("replies: %d\tbytes: %d\n", nreplies, nbytes);
+    }
+
+    return 0;
+}

@@ -1,0 +1,181 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+
+#ifndef INFINITY
+# define INFINITY DBL_MAX
+#endif
+
+#define DELTA 1.49012e-08
+
+typedef struct { double x, y, z; } Vec;
+static __inline__ Vec vec(double ix, double iy, double iz)
+{ Vec a; a.x = ix; a.y = iy; a.z = iz; return a; }
+static __inline__ Vec add(Vec a, Vec b) { return vec(a.x + b.x, a.y + b.y, a.z + b.z); }
+static __inline__ Vec sub(Vec a, Vec b) { return vec(a.x - b.x, a.y - b.y, a.z - b.z); }
+static __inline__ Vec scale(double a, Vec b) { return vec(a * b.x, a * b.y, a * b.z); }
+static __inline__ double dot(Vec a, Vec b) { return a.x*b.x + a.y*b.y + a.z*b.z; }
+static __inline__ Vec unitise(Vec a) { return scale(1 / sqrt(dot(a, a)), a); }
+
+typedef struct { Vec orig, dir; } Ray;
+static __inline__ Ray ray(Vec o, Vec d) { Ray r; r.orig = o; r.dir = d; return r; }
+
+typedef struct _tSphere Sphere;
+typedef struct _tGroup Group;
+typedef struct _tScene_Object Scene;
+
+#define SCENE_OBJECT(T) \
+   void (*intersect) (T*, double *, Vec *, const Ray *); \
+   void (*destroy) (T *)
+
+struct _tScene_Object
+{
+   SCENE_OBJECT(Scene);
+};
+static Scene *scene_new (int, double, double, double, double);
+
+struct _tSphere
+{ 
+   SCENE_OBJECT(Sphere);
+   Vec center; double radius; 
+};
+
+static __inline__ double ray_sphere (const Ray *r, const Sphere *s) 
+{
+   double d, t1, t2;
+   Vec v = sub(s->center, r->orig);
+   double b = dot(v, r->dir), disc = b*b - dot(v, v) + s->radius * s->radius;
+   if (disc < 0) return INFINITY;
+   d = sqrt(disc), t2 = b + d;
+   if (t2 < 0) return INFINITY;
+   t1 = b - d;
+   return (t1 > 0 ? t1 : t2);
+}
+
+static void sphere_intersect (Sphere *s, double *lambda, Vec *normal, const Ray *r)
+{
+   double l = ray_sphere(r, s);
+   if (l >= *lambda) return;
+   *lambda = l;
+   *normal = unitise (add(r->orig, sub(scale(l, r->dir), s->center)));
+}
+
+static void sphere_destroy (Sphere *s)
+{
+   free ((char *)s);
+}
+
+static Sphere *sphere_new (double r, double x, double y, double z)
+{
+   Sphere *s = (Sphere *) calloc (1, sizeof (Sphere));
+   s->intersect = sphere_intersect;
+   s->destroy = sphere_destroy;
+   s->center=vec(x,y,z); s->radius=r; 
+   return s; 
+}
+
+struct _tGroup
+{
+   SCENE_OBJECT(Group);
+   Sphere *bound;
+#define NUM_GROUP_MEMBERS 5
+   Scene *members[NUM_GROUP_MEMBERS];
+};
+
+static void group_intersect (Group *g, double *lambda, Vec *normal, const Ray *r)
+{
+   int i;
+
+   if (ray_sphere (r, g->bound) >= *lambda) 
+     return;
+
+   for (i = 0; i < NUM_GROUP_MEMBERS; i++)
+     {
+	Scene *s = g->members[i];
+	(*s->intersect) (s, lambda, normal, r);
+     }
+}
+
+static void group_destroy (Group *g)
+{
+   int i;
+
+   (*g->bound->destroy) (g->bound);
+   for (i = 0; i < NUM_GROUP_MEMBERS; i++)
+     {
+	Scene *s = g->members[i];
+	(*s->destroy) (s);
+     }
+   free ((char *)g);
+}
+
+static Group *group_new (int level, double r, double x, double y, double z)
+{
+   static double dz[NUM_GROUP_MEMBERS] = {-1, -1, 1, 1, 0};
+   static double dx[NUM_GROUP_MEMBERS] = {-1, 1, -1, 1, 0};
+   double rn;
+   int i;
+   Group *g = (Group *)calloc (1, sizeof (Group));
+   g->intersect = group_intersect;
+   g->destroy = group_destroy;
+   g->bound = sphere_new (3*r, x, y, z);
+   rn = 3*r/sqrt(12.0);
+   for (i = 0; i < NUM_GROUP_MEMBERS-1; i++)
+     g->members[i] = scene_new (level, 0.5*r, x-dx[i]*rn, y+rn, z-dz[i]*rn);
+   g->members[NUM_GROUP_MEMBERS-1] = scene_new (1, r, x, y, z);
+   
+   return g;
+}
+
+static Scene *scene_new (int level, double r, double x, double y, double z)
+{
+   if (level == 1)
+     return (Scene *) sphere_new (r, x, y, z);
+   return (Scene *) group_new (level-1, r, x, y, z);
+}
+
+
+static double ray_trace (Vec light, Ray r, Scene *scene) 
+{
+   double lambda = INFINITY, l, g;
+   Ray r2;
+   Vec n = vec(0, 0, 0);
+   (*scene->intersect) (scene, &lambda, &n, &r);
+   if (lambda == INFINITY) return 0.0;
+   if ((g = dot(n, light)) <= 0.0)
+     return 0.0;
+   l = INFINITY;
+   r2 = ray(add(r.orig, scale(lambda, add(r.dir, scale(DELTA, n)))), light);
+   (*scene->intersect) (scene, &l, &n, &r2);
+   return (l == INFINITY ? g : 0.0);
+}
+
+int main (int argc, char *argv[]) 
+{
+   int x, y, dx, dy, level, n, ss;
+   Vec light;
+   Scene *scene;
+   level = 6, n = (argc==2 ? atoi(argv[1]) : 256), ss = 4;
+   light = sub(vec(0, 0, 0), unitise(vec(-1, -3, 2)));
+   scene = scene_new (level, 1, 0, -1, 0);  /* Build the scene */
+   fprintf (stdout, "P5\n%d %d\n255\n", n, n);
+   for (y=n-1; y>=0; --y)
+     {
+	for (x=0; x<n; ++x) 
+	  {
+	     double g=0.0;
+	     for (dx=0; dx<ss; ++dx)
+	       {
+		  for (dy=0; dy<ss; ++dy) 
+		    {
+		       Vec d=vec(x+(double)dx/ss-n/2., y+(double)dy/ss-n/2., n);
+		       g += ray_trace(light, ray(vec(0, 0, -4), unitise(d)), scene);
+		    }
+	       }
+	     putc ((char)(.5 + 255*g/(ss*ss)),stdout);
+	  }
+    }
+   (*scene->destroy)(scene);
+   return 0;
+}

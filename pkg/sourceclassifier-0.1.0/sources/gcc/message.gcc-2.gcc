@@ -1,0 +1,72 @@
+/* The Computer Language Shootout
+ * http://shootout.alioth.debian.org/
+ * contributed contributed by Colin Gibbs
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ucontext.h>
+
+#define STACK_SIZE 1024
+
+struct thread_context {
+   struct thread_context *next;
+   ucontext_t ctx;
+   int value;
+   char stack[STACK_SIZE];
+};
+
+static void thread(struct thread_context *c)
+{
+   while (1) {
+      c->next->value = c->value + 1;
+      swapcontext(&c->ctx, &c->next->ctx);
+   }
+}
+
+static void create_threads(struct thread_context **head, struct thread_context **tail, int n)
+{
+   struct thread_context *c;
+   typedef void (*thread_t)(void);
+
+   c = malloc(sizeof(*c));
+   *head = c;
+
+   getcontext(&c->ctx);
+   c->ctx.uc_stack.ss_sp = c->stack;
+   c->ctx.uc_stack.ss_size = sizeof(c->stack);
+   makecontext(&c->ctx, (thread_t)thread, 1, c);
+
+   if (n > 1) {
+      create_threads(&c->next, tail, n - 1);
+   } else {
+      c->next = NULL;
+      *tail = c;
+   }
+}
+
+static int call_threads(struct thread_context *head, struct thread_context *tail)
+{
+   struct thread_context here;
+   tail->next = &here;
+   head->value = 0;
+   swapcontext(&here.ctx, &head->ctx);
+   return here.value;
+}
+
+int main(int argc, char **argv)
+{
+   int n, i, count;
+   struct thread_context *head, *tail;
+
+   n = atoi(argv[1]);
+   create_threads(&head, &tail, 500);
+
+   count = 0;
+   for (i = 0; i < n; i++)
+      count += call_threads(head, tail);
+
+   printf("%d\n", count);
+
+   return 0;
+}

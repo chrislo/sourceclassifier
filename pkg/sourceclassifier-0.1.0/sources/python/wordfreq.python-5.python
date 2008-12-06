@@ -1,0 +1,39 @@
+import sys, re, string, fileinput
+
+def main():
+    # count is a dictionary of word counts
+    count = {}
+    # speed up function call by making a local alias
+    lower = string.lower
+    #nextline = sys.stdin.readline
+    p = re.compile(r'[^a-z]')
+    #while 1:
+    #    line = nextline()
+    #    if not line: break
+    for line in fileinput.input('-'):
+        for word in p.split(lower(line)):
+            if not count.has_key(word):
+                count[word] = 1
+            else:
+                count[word] = count[word] + 1
+
+    bucket = {}
+    for key, val in count.items():
+        if not bucket.has_key(val):
+            bucket[val] = []
+        bucket[val].append(key)
+
+    freqs = bucket.keys()
+    freqs.sort()
+    freqs.reverse()
+
+    for freq in freqs:
+        words = bucket[freq]
+        words.sort()
+        words.reverse()
+        for word in words:
+            if len(word) > 0:
+                print "%7d\t%s" % (freq, word)
+
+main()
+sys.stdout.flush()

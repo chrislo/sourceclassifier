@@ -1,0 +1,67 @@
+#!/usr/bin/python -OO
+# The Computer Language Shootout Benchmarks
+# http://shootout.alioth.debian.org
+#
+# Contributed by Kevin Carson
+
+from sys import argv, stdout
+from socket import socket, gethostbyname, \
+    AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from os import fork, wait, _exit
+
+
+def server(msg_count, msg_mult, reply_size, request_size) :
+    s = socket(AF_INET, SOCK_STREAM)
+    s.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+    s.bind((gethostbyname('localhost'), 11000))
+    s.listen(1)
+    sc, addr = s.accept()
+    reply = " " * reply_size
+    screcv = sc.recv
+    scsendall = sc.sendall
+
+    for i in xrange(msg_count * msg_mult) :
+        request = screcv(request_size)
+        scsendall(reply)
+
+    sc.close()
+    s.close()
+
+
+def client(msg_count, msg_mult, reply_size, request_size) :
+    s = socket(AF_INET, SOCK_STREAM)
+    while s.connect_ex((gethostbyname('localhost'), 11000)) != 0 : pass
+    request = " " * request_size
+    srecv = s.recv
+    ssend = s.send
+
+    replies = bytes = 0
+    for i in xrange(msg_count * msg_mult) :
+        ssend(request)
+        byte_count = 0
+        while byte_count < reply_size :
+            reply = srecv(reply_size)
+            byte_count += len(reply)
+        bytes += byte_count
+        replies += 1
+
+    s.close()
+    print "replies: %d\tbytes: %d" % (replies, bytes)
+    stdout.flush()
+        
+
+M = 100
+reply_size = 4096
+request_size = 64
+
+N = int(argv[1])
+
+child_pid = fork()
+
+if child_pid == 0 :
+    client(N, M, reply_size, request_size)
+    _exit(0)
+
+else :
+    server(N, M, reply_size, request_size)
+    wait()

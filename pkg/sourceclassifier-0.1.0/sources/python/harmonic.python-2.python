@@ -1,0 +1,9 @@
+#!/usr/bin/python
+# The Great Computer Language Shootout
+# http://shootout.alioth.debian.org/
+#
+# contributed by Jacob Lee et al.
+
+import sys
+
+print "%.9f" % sum(1.0/i for i in xrange(1, 1+int(sys.argv[1])))

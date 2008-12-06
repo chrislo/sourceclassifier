@@ -1,0 +1,64 @@
+/* The Computer Language Benchmarks Game
+ * http://shootout.alioth.debian.org/
+ * contributed contributed by Ian Chiew
+ */
+
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
+#define THREADS 500
+#define THREAD_STACK_SIZE (1024 * 100)
+
+struct inbox {
+    sem_t sem;
+    int n;
+};
+
+struct worker {
+    struct inbox inbox, *next_inbox;
+    pthread_t thread;
+};
+
+void *work(void *data) {
+    struct worker *worker = (struct worker *)data;
+
+    while (1) {
+        assert(sem_wait(&worker->inbox.sem) == 0);
+        worker->next_inbox->n = worker->inbox.n + 1;
+        assert(sem_post(&worker->next_inbox->sem) == 0);
+    }
+
+    return NULL;
+}
+
+int main(int argc, char **argv) {
+    struct worker workers[THREADS];
+    struct inbox main_inbox;
+    pthread_attr_t attr;
+    int n, i, j, sum = 0;
+
+    assert(argc == 2 && (n = atoi(argv[1])) != -1);
+    assert(sem_init(&main_inbox.sem, 0, 0) == 0);
+    assert(pthread_attr_init(&attr) == 0);
+    assert(pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE) == 0);
+
+    for (i = 0; i < THREADS; i++) {
+        workers[i].next_inbox = i == 0 ? &main_inbox : &workers[i - 1].inbox;
+        sem_init(&workers[i].inbox.sem, 0, 0);
+        assert(pthread_create(&workers[i].thread, &attr, work, &workers[i]) == 0);
+    }
+
+    for (j = 0; j < n; j++)
+    {
+        workers[THREADS - 1].inbox.n = 0;
+        assert(sem_post(&workers[THREADS - 1].inbox.sem) == 0);
+        assert(sem_wait(&main_inbox.sem) == 0);
+        sum += main_inbox.n;
+    }
+
+    printf("%d\n", sum);
+    exit(0);
+}

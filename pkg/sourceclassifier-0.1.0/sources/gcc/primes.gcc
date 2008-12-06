@@ -1,0 +1,75 @@
+/* The Computer Language Benchmarks Game
+   http://shootout.alioth.debian.org/
+   contributed by Steven Noonan
+*/
+ 
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+int
+isPrime ( unsigned long _candidate )
+{
+    unsigned long i, limit;
+
+	/* 0 and 1 aren't prime. */
+    if ( _candidate < 2 ) return 0;
+
+    /* All numbers less than 4 are prime, except '1' */
+    if ( _candidate < 4 ) return -1;
+
+    /* Other than 2, even numbers are not prime */
+    if ( _candidate % 2 == 0 ) return 0;
+
+	/* All primes are of the form 6k+i (where i = -1 or 1), except for 2 or 3. */
+    if ( ( _candidate + 1 ) % 6 != 0
+      && ( _candidate - 1 ) % 6 != 0 )
+    	return 0;
+
+    /*
+       if n is composite then it can be factored into two values,
+       at least one of which is less than or equal to sqrt(n)
+     */
+    limit = (unsigned long)sqrt ((double)_candidate);
+
+    /* Now test all other odd numbers up to sqrt(n) */
+    for ( i = 3; i <= limit; i += 2 ) if ( _candidate % i == 0 ) return 0;
+
+    return 1;
+}
+
+unsigned long
+nthPrime ( unsigned long _primeToFind )
+{
+    unsigned long count = 0, num;
+    for ( num = 1; count < _primeToFind; num++ )
+    {
+        if ( isPrime ( num ) )
+        {
+            count++;
+        }
+    }
+    
+    /* Returning num-1 because we hit a num++ between isPrime and here. */
+    return num - 1;
+}
+
+int
+main ( int argc, char **argv )
+{
+	unsigned long i, n;
+	
+	if ( argc < 2 ) return -1;
+
+	n = atoi(argv[1]);
+	
+	printf ( "1st prime is %d\n", nthPrime ( 1 ) );
+	printf ( "2nd prime is %d\n", nthPrime ( 2 ) );
+
+    for ( i = 10 * n; i <= 50 * n; i += 10 * n )
+    {
+        printf ( "%uth prime is %u\n", i, nthPrime ( i ) );
+    }
+
+    return 0;
+}

@@ -1,0 +1,136 @@
+/* -*- mode: c -*-
+ * $Id: regexmatch.gcc,v 1.1.1.1 2004-05-19 18:11:23 bfulgham Exp $
+ * http://www.bagley.org/~doug/shootout/
+ */
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <pcre.h>
+#include <string.h>
+
+#define MAXLINES   100
+#define MAXLINELEN 132
+
+char *pattern = 
+"(?:^|[^\\d\\(])"		/* must be preceeded by non-digit */
+"(\\()?"			/* match 1: possible initial left paren */
+"(\\d\\d\\d)"			/* match 2: area code is 3 digits */
+"(?(1)\\))"			/* if match1 then match right paren */
+"[ ]"				/* area code followed by one space */
+"(\\d\\d\\d)"			/* match 3: prefix of 3 digits */
+"[ -]"				/* separator is either space or dash */
+"(\\d\\d\\d\\d)"		/* match 4: last 4 digits */
+"\\D"				/* must be followed by a non-digit */
+;
+
+
+int
+main(int argc, char *argv[]) {
+    int NUM = ((argc == 2) ? atoi(argv[1]) : 1);
+    int count;
+    char *cptr = "";
+    char **phones;
+    pcre *re;
+    int erroffset;
+    const char *errptr;
+    int n, lines = 0;
+    char num[256];
+    int i, j, k, matchlen;
+    char *matchoffset;
+    int nmatches;
+    int *ovec, ovecsize;
+    pcre_extra *study;
+
+    phones = (char **)malloc(MAXLINES * sizeof(char *));
+    if (!phones) {
+	fprintf(stderr, "malloc for phones array failed\n");
+	exit(1);
+    }
+    lines = 0;
+    while (cptr) {
+	phones[lines] = (char *)malloc(MAXLINELEN);
+	if (!phones[lines]) {
+	    fprintf(stderr, "malloc to hold line #%d failed\n", lines);
+	    exit(1);
+	}
+	cptr = fgets(phones[lines], MAXLINELEN, stdin);
+	lines++;
+	if (lines > MAXLINES) {
+	    fprintf(stderr, "MAXLINES is too small\n");
+	    exit(1);
+	}
+    }
+
+    re = pcre_compile(pattern, 0, &errptr, &erroffset, NULL);
+    if (!re) {
+	fprintf(stderr, "can't open compile regexp\n");
+	exit(1);
+    }
+
+    study = pcre_study(re, 0, &errptr);
+
+    if (pcre_fullinfo(re, NULL, PCRE_INFO_CAPTURECOUNT, &nmatches) != 0) {
+	fprintf(stderr, "pcre_fullinfo failed\n");
+	exit(1);
+    }
+    nmatches++;			/* add match of entire pattern */
+
+    ovecsize = sizeof(int) * nmatches * 3;
+    ovec = (int *)malloc(ovecsize);
+    if (!ovec) {
+	fprintf(stderr, "malloc for ovec array failed\n");
+	exit(1);
+    }
+
+    count = 0;
+    while (NUM--) {
+	for (i=0; i<lines; i++) {
+	    n = pcre_exec(re, study,
+			  phones[i], strlen(phones[i]), 0,
+			  0, ovec, ovecsize);
+	    if (n == nmatches) {
+		/* stuff the match into the buffer "num" */
+		k = 2*2;	/* initial offset into ovec */
+		/* areacode */
+		j = 0;
+		num[j++] = '(';
+		matchoffset = phones[i] + ovec[k];
+		matchlen = ovec[k+1] - ovec[k];
+		strncpy(num+j, matchoffset, matchlen);
+		j += matchlen; k += 2;
+		num[j++] = ')';
+		/* space separator */
+		num[j++] = ' ';
+		/* exchange */
+		matchoffset = phones[i] + ovec[k];
+		matchlen = ovec[k+1] - ovec[k];
+		strncpy(num+j, matchoffset, matchlen);
+		j += matchlen; k += 2;
+		/* dash */
+		num[j++] = '-';
+		/* last 4 digits */
+		matchoffset = phones[i] + ovec[k];
+		matchlen = ovec[k+1] - ovec[k];
+		strncpy(num+j, matchoffset, matchlen);
+		j += matchlen; k += 2;
+		/* with a cherry on top */
+		num[j] = 0;
+		if (0 == NUM) {
+		    count++;
+		    printf("%d: %s\n", count, num);
+		}
+	    }
+	}
+    }
+
+    for (i=0; i<MAXLINES; i++) {
+	free(phones[i]);
+    }
+    free(phones);
+    free(ovec);
+
+    return(0);
+}
+

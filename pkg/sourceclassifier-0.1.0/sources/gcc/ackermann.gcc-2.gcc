@@ -1,0 +1,93 @@
+/* -*- mode: c -*-
+ * $Id: ackermann.gcc-2.gcc,v 1.1 2005-03-15 06:17:49 bfulgham Exp $
+ * http://shootout.alioth.debian.org/
+ *
+ * Modified to use C inline and unroll of recursive functions
+ * by Paul Hsieh
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#if (defined(__linux) || defined(__unix) || defined(__GNUC__))
+#include <unistd.h>
+#elif (defined(WIN32) || defined(_WIN32) || defined(__WIN32) || 
+defined(_WINDOWS) || defined(_WINDOWS_))
+#include <windows.h>
+#endif
+
+#define glueAckExpand(m) Ack##m
+#define glueAck(m) glueAckExpand(m)
+
+#define Ack0(N) ((N)+1)
+
+#define AckDecl(M,M1)                                 \
+static int glueAck(M) (int N) {                       \
+    if (0 == N) return glueAck(M1) (1);               \
+    if (1 == N) return glueAck(M1) (glueAck(M1) (1)); \
+    return glueAck(M1) (glueAck(M) (N-1));            \
+}
+
+AckDecl(1,0)
+AckDecl(2,1)
+AckDecl(3,2)
+AckDecl(4,3)
+
+/* Removes the overhead of passing around and M parameter, 
+   when it is low (which is the only way this can actually
+   complete execution.) */
+
+int Ack (int M, int N) {
+    switch (M) {
+        case 0: return Ack0 (N);
+        case 1: return Ack1 (N);
+        case 2: return Ack2 (N);
+        case 3: return Ack3 (N);
+        case 4: return Ack4 (N);
+    }
+
+    if (0 == N) return Ack (M-1, 1);
+    if (1 == N) return Ack (M-1, Ack (M-1, 1));
+    return Ack (M-1, Ack (M, N-1));
+}
+
+/* Not called.  Uses full mathematical simplfications when 
+   its possible and unravells the recursion on the N 
+   parameter into a for() loop (so the stack level never 
+   goes deeper than O(M)). */
+
+int AckCheat (int M, int N) {
+    switch (M) {
+        case 0: return Ack0 (N);
+        case 1: return N + 2;
+        case 2: return 2*N + 3;
+        case 3: if (N < (CHAR_BIT * sizeof(int) - 3)) 
+                    return (1 << (N+3))-3;
+    }
+
+    if (0 == N) return AckCheat (M-1, 1);
+    if (1 == N) return AckCheat (M-1, AckCheat (M-1, 1));
+
+    {
+        int a = AckCheat (M-1, 1);
+        for (;N; N--) a = AckCheat (M-1, a);
+        return a;
+    }
+}
+
+int main(int argc, char *argv[]) {
+    int m = ((argc >= 3) ? atoi(argv[argc-2]) : 3);
+    int n = ((argc >= 2) ? atoi(argv[argc-1]) : 1);
+
+    printf("Ack(%d,%d): %d\n", m, n, Ack (m, n));
+
+    /* sleep long enough so we can measure memory usage */
+#if (defined(__linux) || defined(__unix) || defined(__GNUC__))
+    sleep(1);
+#elif (defined(WIN32) || defined(_WIN32) || defined(__WIN32) || 
+defined(_WINDOWS) || defined(_WINDOWS_))
+    Sleep(1000);
+#endif
+
+    return(0);
+}

@@ -1,0 +1,61 @@
+/* -*- mode: c -*-
+ * $Id: spellcheck.gcc-2.gcc,v 1.1 2004-11-10 06:47:52 bfulgham Exp $
+ * http://www.bagley.org/~doug/shootout/
+ */
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "../../Include/simple_hash.h"
+
+int main(int argc, char *argv[]) {
+    int i, wordbufsize = 80;
+    char c, *wordbuf = (char *)malloc(wordbufsize + 1);
+    struct ht_ht *dict = ht_create(40000);
+    FILE *fh;
+    
+    if ((fh = fopen("Usr.Dict.Words", "r")) == NULL) {
+	perror("fopen");
+	exit(1);
+    }
+    i = 0;
+    while ((c = getc(fh)) > 0) {
+        if (isspace(c)) {
+	    if (i > 0) {
+		wordbuf[i] = '\0';
+		ht_find_new(dict, wordbuf)->val = 1;
+		i = 0;
+	    }
+        } else {
+            wordbuf[i++] = c;
+	    if (i == wordbufsize) {
+		wordbufsize *= 2;
+		wordbuf = realloc(wordbuf, wordbufsize + 1);
+	    } 
+        }
+    }
+    fclose(fh);
+
+    i = 0;
+    while ((c = getchar()) > 0) {
+        if (isspace(c)) {
+	    if (i > 0) {
+		wordbuf[i] = '\0';
+		if (ht_find(dict, wordbuf) == NULL) {
+		    printf("%s\n", wordbuf);
+		}
+		i = 0;
+	    }
+        } else {
+            wordbuf[i++] = c;
+	    if (i == wordbufsize) {
+		wordbufsize *= 2;
+		wordbuf = realloc(wordbuf, wordbufsize + 1);
+	    } 
+        }
+    }
+    free(wordbuf);
+    ht_destroy(dict);
+    return(0);
+}
