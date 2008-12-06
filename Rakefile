@@ -1,7 +1,21 @@
+require 'rubygems'
+
 require 'rake'
 require 'rake/testtask'
 require 'find'
 require 'FileUtils'
+require 'echoe'
+
+Echoe.new('uniquify', '0.1.0') do |p|
+  p.description    = "Determine the programming language used in a sample"
+  p.url            = "http://github.com/chrislo/sourceclassifier/tree/master"
+  p.author         = "Chris Lowis"
+  p.email          = "chris.lowis@gmail.com"
+  p.ignore_pattern = ["tmp/*", "script/*"]
+  p.development_dependencies = []
+end
+
+Dir["#{File.dirname(__FILE__)}/tasks/*.rake"].sort.each { |ext| load ext }
 
 module Find
   def match(*paths)
