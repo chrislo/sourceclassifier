@@ -1,5 +1,5 @@
 require File.join(File.dirname(__FILE__), '..', 'lib', 'trainer')
-require File.join(File.dirname(__FILE__), '..', 'lib', 'source_classifier')
+require File.join(File.dirname(__FILE__), '..', 'lib', 'sourceclassifier')
 
 require 'test/unit'
 

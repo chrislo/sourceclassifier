@@ -1,3 +1,6 @@
+require 'rubygems'
+require 'classifier'
+
 class SourceClassifier
 
   attr_reader :training_file
