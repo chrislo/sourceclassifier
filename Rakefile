@@ -3,7 +3,7 @@ require 'rubygems'
 require 'rake'
 require 'rake/testtask'
 require 'find'
-require 'FileUtils'
+require 'fileutils'
 require 'echoe'
 
 Echoe.new('sourceclassifier', '0.1.0') do |p|
