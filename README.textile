@@ -6,10 +6,12 @@ h2. Usage
 
 First install the gem using github as a source
 
-  $ gem install sourceclassifier
+  $ gem sources -a http://gems.github.com 
+  $ sudo gem install chrislo-sourceclassifier
 
 Then, to use
 
+<pre>
   require 'rubygems'
   require 'sourceclassifier'
   
@@ -32,6 +34,7 @@ Then, to use
   
   s.identify(ruby_text) #=> Ruby
   s.identify(c_text) #=> Gcc
+</pre>
 
 h2. Training
 
