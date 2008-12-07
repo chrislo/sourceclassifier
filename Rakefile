@@ -11,7 +11,8 @@ Echoe.new('sourceclassifier', '0.1.0') do |p|
   p.url            = "http://github.com/chrislo/sourceclassifier/tree/master"
   p.author         = "Chris Lowis"
   p.email          = "chris.lowis@gmail.com"
-  p.ignore_pattern = ["tmp/*", "script/*"]
+  p.ignore_pattern = ["tmp/*", "script/*", "sources/*"]
+  p.runtime_dependencies = ["classifier"]
   p.development_dependencies = []
 end
 
