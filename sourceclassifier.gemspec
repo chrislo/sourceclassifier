@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{sourceclassifier}
-  s.version = "0.1.0"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Lowis"]
-  s.date = %q{2008-12-07}
+  s.date = %q{2008-12-08}
   s.description = %q{Determine the programming language used in a sample}
   s.email = %q{chris.lowis@gmail.com}
   s.extra_rdoc_files = ["lib/sourceclassifier.rb", "lib/trainer.rb", "README.textile"]

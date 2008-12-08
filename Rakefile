@@ -6,7 +6,7 @@ require 'find'
 require 'fileutils'
 require 'echoe'
 
-Echoe.new('sourceclassifier', '0.1.0') do |p|
+Echoe.new('sourceclassifier', '0.2.0') do |p|
   p.description    = "Determine the programming language used in a sample"
   p.url            = "http://github.com/chrislo/sourceclassifier/tree/master"
   p.author         = "Chris Lowis"
