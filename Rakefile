@@ -40,7 +40,7 @@ Rake::TestTask.new("test_units") { |t|
 
 desc "Populate training data directories"
 task :populate do
-  languages = %w[ruby python gcc perl]
+  languages = %w[ruby python gcc perl java javascript]
 
   languages.each do |language|
     # create directories
