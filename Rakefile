@@ -38,21 +38,37 @@ Rake::TestTask.new("test_units") { |t|
   t.warning = false
 }
 
-desc "Populate training data directories"
-task :populate do
-  languages = %w[gcc java javascript perl php python ruby]
+namespace :populate do
+  desc "Populate training data directories from shootout sources"
+  task :shootout do
+    languages = %w[gcc java javascript perl php python ruby]
 
-  languages.each do |language|
-    # create directories
-    target_dir = "./sources/#{language}"
+    languages.each do |language|
+      # create directories
+      target_dir = "./sources/#{language}"
+      FileUtils.mkdir_p target_dir
+
+      # copy source files to appropriate directories
+      Find.match(SHOOTOUT_CVS_ROOT) do |file| 
+        this_ext = File.extname(file).downcase
+        if this_ext == ".#{language}"
+          FileUtils.cp file, "#{target_dir}/#{File.basename(file)}"
+        end
+      end
+    end
+  end
+
+  desc "Populate using css from csszengarden"
+  task :css do
+
+    target_dir = "./sources/css"
     FileUtils.mkdir_p target_dir
 
-    # copy source files to appropriate directories
-    Find.match(SHOOTOUT_CVS_ROOT) do |file| 
-      this_ext = File.extname(file).downcase
-      if this_ext == ".#{language}"
-        FileUtils.cp file, "#{target_dir}/#{File.basename(file)}"
-      end
+    (100..200).each do |i|
+      url = "http://csszengarden.com/#{i}/#{i}.css"
+      puts "Fetching #{url}"
+      system("curl -o ./sources/css/csszengarden_#{i}.css #{url}")
+      sleep(2) # be kind
     end
   end
 end
