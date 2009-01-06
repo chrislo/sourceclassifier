@@ -2,15 +2,15 @@
 
 Gem::Specification.new do |s|
   s.name = %q{sourceclassifier}
-  s.version = "0.2.1"
+  s.version = "0.2.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Chris Lowis"]
-  s.date = %q{2008-12-31}
+  s.date = %q{2009-01-06}
   s.description = %q{Determine the programming language used in a code snippet}
   s.email = %q{chris.lowis@gmail.com}
   s.extra_rdoc_files = ["lib/sourceclassifier.rb", "lib/trainer.rb", "README.textile"]
-  s.files = ["examples/example.rb", "lib/sourceclassifier.rb", "lib/trainer.rb", "Rakefile", "README.textile", "sourceclassifier.gemspec", "test/fixtures/sources/gcc/ackermann.gcc-2.gcc", "test/fixtures/sources/python/ackermann.python", "test/fixtures/sources/ruby/ackermann.ruby", "test/test_source_classifier.rb", "test/test_trainer.rb", "trainer.bin", "Manifest"]
+  s.files = ["examples/example.rb", "lib/sourceclassifier.rb", "lib/trainer.rb", "Rakefile", "HISTORY", "README.textile", "sourceclassifier.gemspec", "test/fixtures/sources/gcc/ackermann.gcc-2.gcc", "test/fixtures/sources/python/ackermann.python", "test/fixtures/sources/ruby/ackermann.ruby", "test/test_source_classifier.rb", "test/test_trainer.rb", "trainer.bin", "Manifest"]
   s.has_rdoc = true
   s.homepage = %q{http://github.com/chrislo/sourceclassifier/tree/master}
   s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Sourceclassifier", "--main", "README.textile"]

@@ -2,6 +2,7 @@ examples/example.rb
 lib/sourceclassifier.rb
 lib/trainer.rb
 Rakefile
+HISTORY
 README.textile
 sourceclassifier.gemspec
 test/fixtures/sources/gcc/ackermann.gcc-2.gcc

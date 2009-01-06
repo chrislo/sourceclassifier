@@ -1,0 +1,7 @@
+v 0.2.2 - Added CSS and PHP (thanks to Peter Cooper and commentors at
+rubyinside.com for suggestions). CSS corpus is populated from
+csszengarden.com using the rake task populate:css
+
+v 0.2 - Added Javascript and Java
+
+v 0.1 - Initial commit

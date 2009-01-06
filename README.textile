@@ -2,6 +2,8 @@ h1. SourceClassifier
 
 Source classifier identifies programming language using a Bayesian classifier trained on a corpus generated from the "Computer Language Benchmarks Game":http://shootout.alioth.debian.org/ . It is written in Ruby and availabe as a gem. To train the classifier to identify new languages download the sources from github.
 
+Out of the box SourceClassifier recognises Css, C, Java, Javascript, Perl, Php, Python and Ruby.
+
 h2. Usage
 
 First install the gem using github as a source
