@@ -1,0 +1,1 @@
+<p><strong>NOT ACCEPTED:</strong> Program should use the "Unbounded Spigot Algorithms for the Digits of Pi" not the Rabinowitz algorithm.</p>

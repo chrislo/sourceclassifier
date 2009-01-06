@@ -1,0 +1,1 @@
+<p><strong>NOT ACCEPTED:</strong> The program uses local variables to minimize indexed access.</p>

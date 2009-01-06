@@ -1,0 +1,3 @@
+<p>503 threads are created with forkIO, with each thread creating one synchronised mutable variable (MVar) shared with the next thread in the ring. The last thread created returns an MVar to share with the first thread. Each thread reads from the MVar to its left, and writes to the MVar to its right.</p>
+<p>Each thread then waits on a token to be passed from its neighbour. Tokens are then passed around the threads via the MVar chain N times, and the thread id of the final thread to receive a token is printed.</p>
+<p>More information on <a href="http://www.haskell.org/ghc/dist/current/docs/users_guide/lang-parallel.html">Haskell concurrency and parallelism</a>.</p>

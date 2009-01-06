@@ -1,0 +1,1 @@
+<p><strong>NOT ACCEPTED:</strong> The implementation does the search for solutions in reverse order - so each permutation is only done once, speeding up the calculation. (Use the less smart algorithm for this benchmark.)</p>

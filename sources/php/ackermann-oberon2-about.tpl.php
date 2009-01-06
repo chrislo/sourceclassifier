@@ -1,0 +1,1 @@
+<p>The module LangShootout contains functions needed for "The Great Computer Languages Shootout". LangShootout.Argi() parses the command-line parameters and returns a LONGINT value.</p>

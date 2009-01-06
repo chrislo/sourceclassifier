@@ -1,0 +1,1 @@
+<p><strong>NOT ACCEPTED:</strong> Not a symmetric rendezvous</p>
