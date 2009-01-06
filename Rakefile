@@ -26,7 +26,7 @@ module Find
   end
   module_function :match
 end	
-
+ 
 SHOOTOUT_CVS_ROOT = '/Users/chris/tmp/shootout-scm-2008-08-24/'
 
 task :default => [:test_units]
@@ -39,6 +39,9 @@ Rake::TestTask.new("test_units") { |t|
 }
 
 namespace :populate do
+  desc "Run all population rake tasks"
+  task :all => ['shootout','css']
+
   desc "Populate training data directories from shootout sources"
   task :shootout do
     languages = %w[gcc java javascript perl php python ruby]
