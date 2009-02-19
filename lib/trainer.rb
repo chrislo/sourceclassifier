@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'classifier'
-require 'ruby-debug'
-
+require 'fileutils'
 
 class Trainer
   attr_reader :classifier

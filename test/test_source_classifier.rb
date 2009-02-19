@@ -1,6 +1,7 @@
 require File.join(File.dirname(__FILE__), '..', 'lib', 'trainer')
 require File.join(File.dirname(__FILE__), '..', 'lib', 'sourceclassifier')
 
+require 'fileutils'
 require 'test/unit'
 
 class TestSourceClassifier < Test::Unit::TestCase
@@ -17,11 +18,11 @@ class TestSourceClassifier < Test::Unit::TestCase
   end
 
   def test_default_training_file
-    require 'ftools'
+
     assert_equal(@c.training_file, @output_dir + "/trainer.bin")
     
     d = SourceClassifier.new()
-    assert(File.compare(d.training_file, File.join(File.dirname(__FILE__), '..', 'trainer.bin')))
+    assert(FileUtils.compare_file(d.training_file, File.join(File.dirname(__FILE__), '..', 'trainer.bin')))
   end
 
   def test_languages
