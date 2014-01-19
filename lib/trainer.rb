@@ -19,7 +19,7 @@ class Trainer
 
       files = Trainer.files_for(sources_dir,language)
       files.each do |f|
-        file_content = File.read(f)
+        file_content = IO.read(f).force_encoding("ISO-8859-1").encode("utf-8", replace: nil)
         b.train language, file_content
       end
     end
