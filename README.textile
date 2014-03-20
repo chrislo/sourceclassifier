@@ -8,7 +8,7 @@ h2. Usage
 
 First install the gem using github as a source
 
-  $ gem sources -a http://gems.github.com 
+  $ gem sources -a http://gems.github.com
   $ sudo gem install chrislo-sourceclassifier
 
 Then, to use
@@ -16,24 +16,24 @@ Then, to use
 <pre>
   require 'rubygems'
   require 'sourceclassifier'
-  
+
   s = SourceClassifier.new
-  
+
   ruby_text = <<EOT
   def my_sorting_function(a)
     a.sort
   end
   EOT
-  
+
   c_text = <<EOT
   #include <unistd.h>
-  
+
   int main() {
     write(1, "hello world\n", 12);
     return(0);
   }
   EOT
-  
+
   s.identify(ruby_text) #=> Ruby
   s.identify(c_text) #=> Gcc
 </pre>
@@ -48,7 +48,7 @@ In the ./sources directory are subdirectories for each language you wish to be a
 
 The rake task populate:shootout can be used to build these subdirectories from a checkout of the "computer language shootout sources":http://alioth.debian.org/scm/?group_id=30402 but you are free to train the classifier using any available examples. Edit the Rakefile to point to your checkout of the shootout sources
 
-Run rake populate:css to grab the css files used to train the classifier from csszengarden.com. 
+Run rake populate:css to grab the css files used to train the classifier from csszengarden.com.
 
 To populate the sources directory using all available sources run
 
@@ -57,3 +57,8 @@ To populate the sources directory using all available sources run
 h2. Acknowledgments
 
 This library depends heavily on the great "Classifier":http://classifier.rubyforge.org/ gem by Lucas Carlson and David Fayram II.
+
+h2. License
+
+This gem is released under the MIT license (see LICENSE). The training
+examples retain their original licenses.
